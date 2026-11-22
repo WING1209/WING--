@@ -2,9 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>WINGお絵描きPV作成</title>
-<!-- GIF生成用ライブラリ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;900&display=swap');
@@ -21,12 +20,13 @@
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
+    height: 100dvh;
     overflow: hidden;
     background: #ffde59;
+    font-size: 14px;
   }
 
-  /* スマホ縦画面時の警告オーバーレイ */
+  /* スマホ縦画面時の警告オーバーレイ（スマホモード時のみ適用） */
   #orientation-warning {
     display: none;
     position: fixed;
@@ -38,18 +38,21 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 20px;
+    padding: 16px;
   }
   #orientation-warning .icon {
-    font-size: 60px;
+    font-size: 48px;
     animation: rotatePhone 1.5s infinite ease-in-out;
   }
   @keyframes rotatePhone {
     0%, 100% { transform: rotate(0deg); }
     50% { transform: rotate(-90deg); }
   }
-  @media screen and (max-width: 900px) and (orientation: portrait) {
-    #orientation-warning {
+  body.device-mobile #orientation-warning {
+    display: none;
+  }
+  @media screen and (max-width: 960px) and (orientation: portrait) {
+    body.device-mobile #orientation-warning {
       display: flex;
     }
   }
@@ -58,45 +61,76 @@
   .screen {
     display: none;
     width: 100%;
-    height: 100%;
+    height: 100dvh;
     position: absolute;
     inset: 0;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding: env(safe-area-inset-top, 8px) env(safe-area-inset-right, 12px) env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 12px);
     background-image: radial-gradient(#ffbd59 20%, transparent 20%), radial-gradient(#ff914d 20%, transparent 20%);
     background-color: #ffde59;
-    background-position: 0 0, 25px 25px;
-    background-size: 50px 50px;
+    background-position: 0 0, 20px 20px;
+    background-size: 40px 40px;
   }
   .screen.active {
     display: flex;
   }
 
-  /* POPなボタン */
+  /* デバイス切替バッジ */
+  .device-switcher {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 6px) + 6px);
+    right: calc(env(safe-area-inset-right, 6px) + 6px);
+    z-index: 50;
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.92);
+    border: 2px solid #333;
+    border-radius: 999px;
+    padding: 2px 6px;
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+  .device-btn {
+    border: none;
+    background: transparent;
+    padding: 3px 7px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 900;
+    color: #333;
+  }
+  .device-btn.active {
+    background: #ff5757;
+    color: #fff;
+  }
+
+  /* POPなボタン（少しコンパクト化） */
   .pop-btn {
     background: #ff5757;
     color: #fff;
-    border: 4px solid #333;
-    border-radius: 20px;
-    padding: 12px 28px;
-    font-size: 1.3rem;
+    border: 3px solid #333;
+    border-radius: 16px;
+    padding: 8px 20px;
+    font-size: 1rem;
     font-weight: 900;
-    box-shadow: 0 6px 0 #333;
+    box-shadow: 0 4px 0 #333;
     cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-    margin: 8px;
+    transition: transform 0.08s, box-shadow 0.08s;
+    margin: 5px;
   }
   .pop-btn:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 #333;
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #333;
   }
   .pop-btn.blue { background: #38b6ff; }
   .pop-btn.green { background: #7ed957; color: #222; }
   .pop-btn.purple { background: #cb6ce6; }
-  .pop-btn.gray { background: #ccc; color: #333; }
+  .pop-btn.gray { background: #e0e0e0; color: #333; }
   .pop-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     pointer-events: none;
   }
 
@@ -105,17 +139,18 @@
     cursor: pointer;
   }
   .title-logo {
-    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    font-size: clamp(1.8rem, 5vw, 3.6rem);
     font-weight: 900;
     color: #ff3131;
+    line-height: 1.15;
     text-align: center;
     text-shadow: 
-      4px 4px 0 #fff,
-      -4px -4px 0 #fff,
-      4px -4px 0 #fff,
-      -4px 4px 0 #fff,
-      0 8px 0 #333;
-    transform: rotate(-3deg);
+      3px 3px 0 #fff,
+      -3px -3px 0 #fff,
+      3px -3px 0 #fff,
+      -3px 3px 0 #fff,
+      0 6px 0 #333;
+    transform: rotate(-2deg);
     animation: bounceTitle 2s infinite ease-in-out;
   }
   .title-logo span {
@@ -123,94 +158,147 @@
     color: #38b6ff;
   }
   @keyframes bounceTitle {
-    0%, 100% { transform: rotate(-3deg) scale(1); }
-    50% { transform: rotate(-1deg) scale(1.05); }
+    0%, 100% { transform: rotate(-2deg) scale(1); }
+    50% { transform: rotate(-1deg) scale(1.04); }
   }
   .start-blink {
-    margin-top: 40px;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    margin-top: 22px;
+    font-size: clamp(1.1rem, 3vw, 1.8rem);
     font-weight: 900;
     color: #fff;
     background: #333;
-    padding: 10px 30px;
+    padding: 7px 24px;
     border-radius: 50px;
-    border: 4px solid #fff;
+    border: 3px solid #fff;
     animation: blink 1s infinite alternate;
   }
   @keyframes blink {
     0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0.3; transform: scale(0.95); }
+    100% { opacity: 0.35; transform: scale(0.96); }
   }
 
-  /* カードコンテナ */
+  /* カードコンテナ（画面内に必ず収まる設定） */
   .card-box {
     background: #fff;
-    border: 5px solid #333;
-    border-radius: 25px;
-    padding: 25px 35px;
-    box-shadow: 0 10px 0 #333;
+    border: 4px solid #333;
+    border-radius: 20px;
+    padding: 14px 20px;
+    box-shadow: 0 6px 0 #333;
     text-align: center;
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 96%;
+    max-height: 92dvh;
     overflow-y: auto;
+    touch-action: pan-y;
   }
   .card-title {
-    font-size: 1.6rem;
-    margin-top: 0;
-    margin-bottom: 20px;
+    font-size: 1.15rem;
+    margin: 0 0 10px 0;
     color: #333;
   }
 
   /* マルチプレイ入力など */
   .pass-display {
-    font-size: 3rem;
+    font-size: 2rem;
     font-weight: 900;
-    letter-spacing: 10px;
+    letter-spacing: 8px;
     background: #eee;
-    border: 4px dashed #333;
-    border-radius: 15px;
-    padding: 10px 25px;
-    margin: 15px 0;
+    border: 3px dashed #333;
+    border-radius: 12px;
+    padding: 6px 18px;
+    margin: 10px 0;
     color: #ff3131;
   }
   input[type="text"], select {
-    font-size: 1.5rem;
-    padding: 10px;
-    border: 4px solid #333;
-    border-radius: 12px;
+    font-size: 1.1rem;
+    padding: 6px 10px;
+    border: 3px solid #333;
+    border-radius: 10px;
     text-align: center;
     font-weight: bold;
-    width: 180px;
+    width: 150px;
   }
 
-  /* 250色パレット選択画面 */
+  /* 透明色選択画面：パレットを大きく＆文字を小さく */
+  #screen-transparent-select .card-box {
+    width: 96%;
+    height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px;
+  }
+  .trans-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+  .trans-title {
+    font-size: 0.95rem;
+    font-weight: 900;
+    margin: 0;
+    color: #333;
+  }
+  .trans-sub {
+    font-size: 0.72rem;
+    color: #666;
+    margin: 0;
+  }
   #palette-250-grid {
-    display: grid;
-    grid-template-columns: repeat(25, 1fr);
-    gap: 2px;
+    flex: 1;
     width: 100%;
-    max-width: 750px;
+    overflow-y: auto;
+    touch-action: pan-y;
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 4px;
     background: #333;
-    padding: 4px;
-    border-radius: 8px;
-    margin: 10px auto;
+    padding: 6px;
+    border-radius: 10px;
+  }
+  body.device-pc #palette-250-grid {
+    grid-template-columns: repeat(20, 1fr);
+    gap: 5px;
   }
   .color-cell {
-    aspect-ratio: 1;
+    min-height: 24px;
+    aspect-ratio: 1.15 / 1;
     cursor: pointer;
-    border: 1px solid rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 4px;
   }
-  .color-cell:hover {
-    transform: scale(1.3);
-    z-index: 2;
-    border: 2px solid #fff;
+  .color-cell:active {
+    transform: scale(1.1);
+    border-color: #fff;
   }
 
-  /* お絵描きメイン画面 */
+  /* 透明色確認モーダル（拡大表示＋はい/いいえ） */
+  #modal-confirm-transparent {
+    z-index: 120;
+  }
+  .preview-swatch-big {
+    width: 110px;
+    height: 110px;
+    border-radius: 18px;
+    border: 4px solid #333;
+    box-shadow: 0 5px 0 #333;
+    margin: 8px auto;
+  }
+  .confirm-color-code {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: #555;
+    margin-bottom: 6px;
+  }
+
+  /* お絵描きメイン画面（上下バー・左右余白を考慮したフィット配置） */
   #screen-draw {
     flex-direction: row;
-    background: #e0e0e0;
+    background: #444;
     justify-content: space-between;
+    padding: calc(env(safe-area-inset-top, 4px) + 4px) calc(env(safe-area-inset-right, 6px) + 6px) calc(env(safe-area-inset-bottom, 4px) + 4px) calc(env(safe-area-inset-left, 6px) + 6px);
+    gap: 6px;
   }
 
   /* 左側：キャンバスエリア */
@@ -222,15 +310,16 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #555;
+    background: #5a5a5a;
+    border-radius: 12px;
+    border: 2px solid #222;
   }
   #canvas-wrapper {
     position: relative;
     width: 480px;
     height: 300px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
     transform-origin: center center;
-    /* 市松模様（透明表現） */
     background-image: 
       linear-gradient(45deg, #ccc 25%, transparent 25%), 
       linear-gradient(-45deg, #ccc 25%, transparent 25%), 
@@ -252,28 +341,28 @@
     display: none;
   }
 
-  /* フレームインジケーター（左上） */
+  /* フレームインジケーター＆ズームリセット */
   #frame-badge {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 6px;
+    left: 6px;
     background: rgba(0,0,0,0.75);
     color: #fff;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.95rem;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 0.72rem;
     z-index: 10;
     pointer-events: none;
   }
   #zoom-reset-btn {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
-    background: rgba(255,255,255,0.9);
+    bottom: 6px;
+    left: 6px;
+    background: rgba(255,255,255,0.92);
     border: 2px solid #333;
-    border-radius: 12px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
+    border-radius: 10px;
+    padding: 3px 8px;
+    font-size: 0.7rem;
     font-weight: bold;
     z-index: 10;
     cursor: pointer;
@@ -281,27 +370,33 @@
 
   /* 右側：GUIパネル */
   #gui-panel {
-    width: 250px;
+    width: 225px;
     height: 100%;
     background: #fff;
-    border-left: 4px solid #333;
+    border: 3px solid #333;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    padding: 8px;
+    padding: 5px;
     z-index: 20;
+    flex-shrink: 0;
+  }
+  body.device-pc #gui-panel {
+    width: 260px;
   }
   .tool-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-    margin-bottom: 6px;
+    gap: 3px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
   }
   .tool-btn {
-    background: #f0f0f0;
-    border: 3px solid #333;
-    border-radius: 10px;
-    padding: 6px 2px;
-    font-size: 0.78rem;
+    background: #f4f4f4;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 3px 1px;
+    font-size: 0.68rem;
     font-weight: bold;
     cursor: pointer;
     display: flex;
@@ -309,25 +404,25 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    line-height: 1.15;
   }
   .tool-btn.active {
     background: #ffde59;
     border-color: #ff3131;
-    box-shadow: inset 0 0 0 2px #ff3131;
+    box-shadow: inset 0 0 0 1.5px #ff3131;
   }
   .tool-btn span.icon {
-    font-size: 1.2rem;
-    line-height: 1.1;
+    font-size: 0.95rem;
   }
   .size-badge {
     position: absolute;
-    top: 2px;
-    right: 4px;
-    font-size: 0.65rem;
+    top: 1px;
+    right: 2px;
+    font-size: 0.55rem;
     background: #333;
     color: #fff;
-    padding: 0 4px;
-    border-radius: 4px;
+    padding: 0 3px;
+    border-radius: 3px;
   }
 
   /* 太さ選択ポップアップ */
@@ -335,11 +430,12 @@
     display: none;
     background: #333;
     color: #fff;
-    padding: 6px;
-    border-radius: 10px;
-    margin-bottom: 6px;
+    padding: 4px;
+    border-radius: 8px;
+    margin-bottom: 4px;
     justify-content: space-around;
     align-items: center;
+    flex-shrink: 0;
   }
   #brush-size-popup.show {
     display: flex;
@@ -348,8 +444,8 @@
     background: #555;
     border: 2px solid #fff;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -362,9 +458,11 @@
   /* GUI下部パレット */
   #gui-palette-container {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    border: 3px solid #333;
-    border-radius: 8px;
+    touch-action: pan-y;
+    border: 2px solid #333;
+    border-radius: 6px;
     padding: 3px;
     background: #222;
     display: grid;
@@ -381,7 +479,7 @@
   .gui-color.selected {
     outline: 2px solid #fff;
     z-index: 2;
-    transform: scale(1.15);
+    transform: scale(1.12);
   }
   .gui-color.disabled-transparent {
     opacity: 0.15;
@@ -392,13 +490,13 @@
     position: absolute;
     inset: 0;
     color: #fff;
-    font-size: 10px;
+    font-size: 9px;
     display: flex;
     justify-content: center;
     align-items: center;
   }
 
-  /* プレビューモーダル＆ダイアログ */
+  /* プレビューモーダル＆ダイアログ（見切れ防止） */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -407,25 +505,57 @@
     z-index: 100;
     justify-content: center;
     align-items: center;
+    padding: env(safe-area-inset-top, 8px) env(safe-area-inset-right, 10px) env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 10px);
   }
   .modal-overlay.active {
     display: flex;
   }
+  #modal-preview .card-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 16px;
+    max-height: 94dvh;
+  }
   #preview-canvas {
-    border: 4px solid #333;
+    border: 3px solid #333;
     background: #fff;
-    width: 360px;
-    height: 225px;
+    max-height: 44dvh;
+    width: auto;
+    max-width: 100%;
+    aspect-ratio: 480 / 300;
+    object-fit: contain;
+  }
+  .preview-controls {
+    margin: 6px 0;
+    font-size: 0.85rem;
+  }
+  .preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+  .preview-actions .pop-btn {
+    padding: 6px 14px;
+    font-size: 0.88rem;
+    margin: 2px;
   }
 </style>
 </head>
 <body>
 
+<!-- スマホ／PC判別＆手動切替バー -->
+<div class="device-switcher" id="device-switcher">
+  <button class="device-btn" id="btn-dev-mobile" onclick="setDeviceMode('mobile')">📱 スマホ</button>
+  <button class="device-btn" id="btn-dev-pc" onclick="setDeviceMode('pc')">💻 PC</button>
+</div>
+
 <!-- スマホ縦画面警告 -->
 <div id="orientation-warning">
   <div class="icon">📱</div>
-  <h2>横画面専用アプリです</h2>
-  <p>端末を横向きにして遊んでね！</p>
+  <h2 style="font-size:1.2rem; margin:8px 0;">横画面専用アプリです</h2>
+  <p style="font-size:0.85rem; margin:0;">端末を横向きにして遊んでね！</p>
 </div>
 
 <!-- 1. タイトル画面 -->
@@ -450,7 +580,7 @@
     <button class="pop-btn" onclick="goScreen('screen-multi-host-setup')">👑 ホスト（部屋をつくる）</button>
     <button class="pop-btn blue" onclick="goScreen('screen-multi-guest')">🎮 ゲスト（部屋に入る）</button>
     <br>
-    <button class="pop-btn gray" style="font-size:0.9rem; padding:8px 16px;" onclick="goScreen('screen-mode1')">もどる</button>
+    <button class="pop-btn gray" style="font-size:0.82rem; padding:5px 14px;" onclick="goScreen('screen-mode1')">もどる</button>
   </div>
 </div>
 
@@ -475,8 +605,7 @@
   <div class="card-box">
     <h2 class="card-title">みんなにパスを教えよう！</h2>
     <div class="pass-display" id="generated-pass">0000</div>
-    <p id="host-wait-status">接続まち... (1 / 2人)</p>
-    <!-- デモ用：全員揃ったことにして次へ進むボタン -->
+    <p id="host-wait-status" style="font-size:0.9rem; margin:6px 0;">接続まち... (1 / 2人)</p>
     <button class="pop-btn green" onclick="goScreen('screen-mode2')">全員そろった！（ゲーム選択へ）</button>
   </div>
 </div>
@@ -496,8 +625,8 @@
 <div id="screen-multi-guest-wait" class="screen">
   <div class="card-box">
     <h2 class="card-title">接続完了！</h2>
-    <p>ホストがゲームを始めるまで待機しています...</p>
-    <button class="pop-btn green" style="font-size:0.9rem;" onclick="goScreen('screen-mode2')">（テスト用：次へ進む）</button>
+    <p style="font-size:0.9rem;">ホストがゲームを始めるまで待機しています...</p>
+    <button class="pop-btn green" style="font-size:0.85rem;" onclick="goScreen('screen-mode2')">（テスト用：次へ進む）</button>
   </div>
 </div>
 
@@ -511,12 +640,30 @@
   </div>
 </div>
 
-<!-- 4. 透明色選択画面（250色パレット） -->
+<!-- 4. 透明色選択画面（パレット拡大＆2段階確認） -->
 <div id="screen-transparent-select" class="screen">
-  <div class="card-box" style="padding: 15px 25px;">
-    <h2 class="card-title" style="margin-bottom:5px;">透明にする色を1つ選んでね！</h2>
-    <p style="font-size:0.85rem; margin:0 0 8px 0; color:#666;">選んだ色はGIF保存時に透明になり、お絵描きパレットでは使えなくなります</p>
+  <div class="card-box">
+    <div class="trans-header">
+      <div>
+        <h2 class="trans-title">透明にする色を選んでタップ</h2>
+        <p class="trans-sub">タップすると拡大確認が出ます（お絵描きパレットでは使用不可）</p>
+      </div>
+      <button class="pop-btn gray" style="font-size:0.75rem; padding:4px 10px; margin:0;" onclick="goScreen('screen-mode2')">もどる</button>
+    </div>
     <div id="palette-250-grid"></div>
+  </div>
+</div>
+
+<!-- 4-B. 透明色確認モーダル（拡大表示＋はい/いいえ） -->
+<div id="modal-confirm-transparent" class="modal-overlay">
+  <div class="card-box" style="padding: 14px 22px;">
+    <h3 style="margin:0; font-size:1rem; color:#333;">この色で良いですか？</h3>
+    <div id="confirm-color-swatch" class="preview-swatch-big"></div>
+    <div id="confirm-color-hex" class="confirm-color-code">#000000</div>
+    <div>
+      <button class="pop-btn green" style="padding:7px 22px; font-size:0.95rem;" onclick="confirmTransparentYes()">はい</button>
+      <button class="pop-btn gray" style="padding:7px 22px; font-size:0.95rem;" onclick="confirmTransparentNo()">いいえ</button>
+    </div>
   </div>
 </div>
 
@@ -525,7 +672,7 @@
   <!-- 左側キャンバス -->
   <div id="canvas-viewport">
     <div id="frame-badge">1枚目 / 最大10枚</div>
-    <button id="zoom-reset-btn" onclick="resetZoom()">🔍 100%に戻す</button>
+    <button id="zoom-reset-btn" onclick="resetZoom()">🔍 100%</button>
     <div id="canvas-wrapper">
       <canvas id="draw-canvas" width="480" height="300"></canvas>
       <canvas id="grid-canvas" width="480" height="300"></canvas>
@@ -545,7 +692,7 @@
       </button>
       <button class="tool-btn" id="tool-bucket" onclick="handleToolClick('bucket')">
         <span class="size-badge" id="badge-bucket">標準</span>
-        <span class="icon">🪣</span>塗りつぶし
+        <span class="icon">🪣</span>塗つぶし
       </button>
       <button class="tool-btn" id="tool-grid" onclick="toggleGrid()">
         <span class="icon">田</span>グリッド
@@ -557,7 +704,7 @@
         <span class="icon">→</span>進む
       </button>
       <button class="tool-btn" onclick="saveCurrentPNG()">
-        <span class="icon">💾</span>保存(PNG)
+        <span class="icon">💾</span>PNG保存
       </button>
       <button class="tool-btn" id="btn-next-frame" onclick="nextFrame()">
         <span class="icon">⏭️</span>次へ
@@ -578,14 +725,16 @@
 <!-- 6. 完了プレビュー＆GIF保存モーダル -->
 <div id="modal-preview" class="modal-overlay">
   <div class="card-box">
-    <h2 class="card-title">アニメーションプレビュー</h2>
+    <h2 class="card-title" style="font-size:1rem; margin-bottom:6px;">アニメーションプレビュー</h2>
     <canvas id="preview-canvas" width="480" height="300"></canvas>
-    <div style="margin: 12px 0;">
-      <label style="font-weight:bold;">スピード調整: <span id="speed-label">200</span> ms</label><br>
-      <input type="range" id="speed-slider" min="50" max="1000" step="50" value="200" style="width:250px;" oninput="updateAnimSpeed(this.value)">
+    <div class="preview-controls">
+      <label style="font-weight:bold;">スピード: <span id="speed-label">200</span> ms</label><br>
+      <input type="range" id="speed-slider" min="50" max="1000" step="50" value="200" style="width:200px;" oninput="updateAnimSpeed(this.value)">
     </div>
-    <button class="pop-btn green" id="btn-save-gif" onclick="exportGIF()">✨ アニメーションGIFで保存</button>
-    <button class="pop-btn gray" onclick="closePreview()">もどる</button>
+    <div class="preview-actions">
+      <button class="pop-btn green" id="btn-save-gif" onclick="exportGIF()">✨ GIFで保存</button>
+      <button class="pop-btn gray" onclick="closePreview()">もどる</button>
+    </div>
   </div>
 </div>
 
@@ -593,7 +742,7 @@
 <div id="modal-after-save" class="modal-overlay">
   <div class="card-box">
     <h2 class="card-title">保存が完了しました！</h2>
-    <p style="font-size:1.2rem; font-weight:bold;">メニュー画面へ戻りますか？</p>
+    <p style="font-size:0.95rem; font-weight:bold; margin:8px 0;">メニュー画面へ戻りますか？</p>
     <button class="pop-btn blue" onclick="returnToMenu()">はい</button>
     <button class="pop-btn gray" onclick="closeAfterSaveDialog()">いいえ</button>
   </div>
@@ -601,620 +750,20 @@
 
 <script>
 /* ==========================================
-   1. 250色カラーパレット生成
+   0. スマホ／PC 自動判別＆切替
 ========================================== */
-const PALETTE_250 = [];
-(function generate250Colors() {
-  // 10段階グレースケール
-  for (let i = 0; i < 10; i++) {
-    const v = Math.round((255 / 9) * i);
-    const hex = '#' + [v, v, v].map(x => x.toString(16).padStart(2, '0')).join('');
-    PALETTE_250.push(hex);
-  }
-  // 24色相 × 10明度・彩度バリエーション = 240色 (合計250色)
-  const hues = 24;
-  const tones = [
-    [100, 85], [100, 70], [100, 55], [100, 45], [100, 30],
-    [70, 80],  [70, 60],  [70, 40],  [45, 75],  [45, 45]
-  ];
-  for (let h = 0; h < hues; h++) {
-    const hue = Math.round((360 / hues) * h);
-    for (let t = 0; t < tones.length; t++) {
-      PALETTE_250.push(hslToHex(hue, tones[t][0], tones[t][1]));
-    }
-  }
-})();
-
-function hslToHex(h, s, l) {
-  l /= 100;
-  const a = s * Math.min(l, 1 - l) / 100;
-  const f = n => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color).toString(16).padStart(2, '0');
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
+function detectDevice() {
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const isSmallScreen = Math.min(window.screen.width, window.screen.height) <= 820;
+  return (isTouch && isSmallScreen) ? 'mobile' : 'pc';
 }
 
-/* ==========================================
-   2. 画面遷移とゲームステート管理
-========================================== */
-let gameState = {
-  playMode: 'single',
-  gameMode: 'anim',
-  transparentColor: null,
-  currentColor: '#000000',
-  currentTool: 'pen',
-  penSize: 4,
-  eraserSize: 10,
-  bucketTolerance: 10,
-  gridVisible: false,
-  frames: [], // ImageData配列（最大10枚）
-  currentFrameIndex: 0,
-  history: [], // 現在のフレームのUndo履歴
-  redoStack: []
-};
-
-function goScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function setDeviceMode(mode) {
+  document.body.classList.remove('device-mobile', 'device-pc');
+  document.body.classList.add('device-' + mode);
+  document.getElementById('btn-dev-mobile').classList.toggle('active', mode === 'mobile');
+  document.getElementById('btn-dev-pc').classList.toggle('active', mode === 'pc');
+  fitCanvasToViewport();
 }
 
-function selectPlayMode(mode) {
-  gameState.playMode = mode;
-  if (mode === 'single') {
-    goScreen('screen-mode2');
-  } else {
-    goScreen('screen-multi-role');
-  }
-}
-
-function createHostRoom() {
-  const count = document.getElementById('host-player-count').value;
-  const pass = Math.floor(1000 + Math.random() * 9000);
-  document.getElementById('generated-pass').textContent = pass;
-  document.getElementById('host-wait-status').textContent = `接続まち... (1 / ${count}人)`;
-  goScreen('screen-multi-host-wait');
-}
-
-function joinGuestRoom() {
-  const val = document.getElementById('guest-pass-input').value;
-  if (!/^\d{4}$/.test(val)) {
-    alert('4桁の数字を入力してください');
-    return;
-  }
-  goScreen('screen-multi-guest-wait');
-}
-
-function selectGameMode(mode) {
-  gameState.gameMode = mode;
-  if (mode === 'anim') {
-    renderTransparentSelector();
-    goScreen('screen-transparent-select');
-  } else {
-    gameState.transparentColor = null;
-    initDrawingSession();
-    goScreen('screen-draw');
-  }
-}
-
-function renderTransparentSelector() {
-  const grid = document.getElementById('palette-250-grid');
-  grid.innerHTML = '';
-  PALETTE_250.forEach(hex => {
-    const cell = document.createElement('div');
-    cell.className = 'color-cell';
-    cell.style.backgroundColor = hex;
-    cell.onclick = () => {
-      gameState.transparentColor = hex;
-      initDrawingSession();
-      goScreen('screen-draw');
-    };
-    grid.appendChild(cell);
-  });
-}
-
-/* ==========================================
-   3. お絵描きエンジン＆ツール制御
-========================================== */
-const canvas = document.getElementById('draw-canvas');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const gridCanvas = document.getElementById('grid-canvas');
-const gridCtx = gridCanvas.getContext('2d');
-
-function initDrawingSession() {
-  ctx.clearRect(0, 0, 480, 300);
-  // 背景モードの場合は白で初期化
-  if (gameState.gameMode === 'bg') {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 480, 300);
-  }
-  gameState.frames = [ctx.getImageData(0, 0, 480, 300)];
-  gameState.currentFrameIndex = 0;
-  gameState.history = [ctx.getImageData(0, 0, 480, 300)];
-  gameState.redoStack = [];
-  updateFrameUI();
-  renderGuiPalette();
-  drawGridLines();
-  resetZoom();
-}
-
-function renderGuiPalette() {
-  const container = document.getElementById('gui-palette-container');
-  container.innerHTML = '';
-  // 初期選択色が透明色と被っていたら別の色にする
-  if (gameState.currentColor === gameState.transparentColor) {
-    gameState.currentColor = PALETTE_250.find(c => c !== gameState.transparentColor);
-  }
-
-  PALETTE_250.forEach(hex => {
-    const div = document.createElement('div');
-    div.className = 'gui-color';
-    div.style.backgroundColor = hex;
-    if (hex === gameState.transparentColor) {
-      div.classList.add('disabled-transparent');
-    } else {
-      if (hex === gameState.currentColor) div.classList.add('selected');
-      div.onclick = () => {
-        gameState.currentColor = hex;
-        document.querySelectorAll('.gui-color').forEach(el => el.classList.remove('selected'));
-        div.classList.add('selected');
-      };
-    }
-    container.appendChild(div);
-  });
-}
-
-// ツール選択＆再タップ時の太さ・設定ポップアップ
-function handleToolClick(tool) {
-  const popup = document.getElementById('brush-size-popup');
-  const isSameTool = (gameState.currentTool === tool);
-
-  gameState.currentTool = tool;
-  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tool-' + tool).classList.add('active');
-  if (gameState.gridVisible) document.getElementById('tool-grid').classList.add('active');
-
-  if (isSameTool) {
-    // 決定状態で再タップされたらオプション表示切替
-    if (popup.classList.contains('show')) {
-      popup.classList.remove('show');
-    } else {
-      renderToolOptions(tool);
-      popup.classList.add('show');
-    }
-  } else {
-    popup.classList.remove('show');
-  }
-}
-
-function renderToolOptions(tool) {
-  const popup = document.getElementById('brush-size-popup');
-  popup.innerHTML = '';
-  if (tool === 'pen') {
-    [2, 4, 8, 16].forEach(sz => {
-      const btn = document.createElement('div');
-      btn.className = 'size-dot-btn' + (gameState.penSize === sz ? ' selected' : '');
-      btn.innerHTML = `<div style="width:${sz}px;height:${sz}px;background:#fff;border-radius:50%;"></div>`;
-      btn.onclick = () => {
-        gameState.penSize = sz;
-        document.getElementById('badge-pen').textContent = sz + 'px';
-        popup.classList.remove('show');
-      };
-      popup.appendChild(btn);
-    });
-  } else if (tool === 'eraser') {
-    [6, 12, 24, 40].forEach(sz => {
-      const btn = document.createElement('div');
-      btn.className = 'size-dot-btn' + (gameState.eraserSize === sz ? ' selected' : '');
-      btn.style.fontSize = '10px';
-      btn.textContent = sz;
-      btn.onclick = () => {
-        gameState.eraserSize = sz;
-        document.getElementById('badge-eraser').textContent = sz + 'px';
-        popup.classList.remove('show');
-      };
-      popup.appendChild(btn);
-    });
-  } else if (tool === 'bucket') {
-    [{label:'厳密', val:5}, {label:'標準', val:25}, {label:'広め', val:60}].forEach(opt => {
-      const btn = document.createElement('button');
-      btn.style.cssText = 'background:#555;color:#fff;border:1px solid #fff;border-radius:6px;padding:4px 8px;font-size:12px;';
-      btn.textContent = opt.label;
-      btn.onclick = () => {
-        gameState.bucketTolerance = opt.val;
-        document.getElementById('badge-bucket').textContent = opt.label;
-        popup.classList.remove('show');
-      };
-      popup.appendChild(btn);
-    });
-  }
-}
-
-// グリッド（縦72px × 横60px）
-function drawGridLines() {
-  gridCtx.clearRect(0, 0, 480, 300);
-  gridCtx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-  gridCtx.lineWidth = 1;
-  gridCtx.setLineDash([3, 3]);
-
-  // 横60px間隔（縦線）
-  for (let x = 60; x < 480; x += 60) {
-    gridCtx.beginPath();
-    gridCtx.moveTo(x, 0);
-    gridCtx.lineTo(x, 300);
-    gridCtx.stroke();
-  }
-  // 縦72px間隔（横線）
-  for (let y = 72; y < 300; y += 72) {
-    gridCtx.beginPath();
-    gridCtx.moveTo(0, y);
-    gridCtx.lineTo(480, y);
-    gridCtx.stroke();
-  }
-}
-
-function toggleGrid() {
-  gameState.gridVisible = !gameState.gridVisible;
-  gridCanvas.style.display = gameState.gridVisible ? 'block' : 'none';
-  document.getElementById('tool-grid').classList.toggle('active', gameState.gridVisible);
-}
-
-// Undo / Redo
-function saveHistoryState() {
-  const snap = ctx.getImageData(0, 0, 480, 300);
-  gameState.history.push(snap);
-  if (gameState.history.length > 30) gameState.history.shift();
-  gameState.redoStack = [];
-  gameState.frames[gameState.currentFrameIndex] = snap;
-}
-
-function undo() {
-  if (gameState.history.length <= 1) return;
-  const current = gameState.history.pop();
-  gameState.redoStack.push(current);
-  const prev = gameState.history[gameState.history.length - 1];
-  ctx.putImageData(prev, 0, 0);
-  gameState.frames[gameState.currentFrameIndex] = prev;
-}
-
-function redo() {
-  if (gameState.redoStack.length === 0) return;
-  const next = gameState.redoStack.pop();
-  gameState.history.push(next);
-  ctx.putImageData(next, 0, 0);
-  gameState.frames[gameState.currentFrameIndex] = next;
-}
-
-/* ==========================================
-   4. 描画処理＆ピンチズーム操作
-========================================== */
-const viewport = document.getElementById('canvas-viewport');
-const wrapper = document.getElementById('canvas-wrapper');
-let scale = 1, panX = 0, panY = 0;
-let isDrawing = false;
-let lastX = 0, lastY = 0;
-
-// マルチタッチピンチ用
-let initialPinchDist = null;
-let initialScale = 1;
-
-function updateTransform() {
-  wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-}
-
-function resetZoom() {
-  scale = 1;
-  panX = 0;
-  panY = 0;
-  updateTransform();
-}
-
-function getCanvasCoords(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  const x = (clientX - rect.left) * (480 / rect.width);
-  const y = (clientY - rect.top) * (300 / rect.height);
-  return { x: Math.floor(x), y: Math.floor(y) };
-}
-
-// タッチイベント（1本指＝描画、2本指＝ピンチズーム）
-viewport.addEventListener('touchstart', e => {
-  if (e.touches.length === 2) {
-    isDrawing = false;
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    initialPinchDist = Math.hypot(dx, dy);
-    initialScale = scale;
-  } else if (e.touches.length === 1) {
-    const pt = getCanvasCoords(e.touches[0].clientX, e.touches[0].clientY);
-    startStroke(pt.x, pt.y);
-  }
-}, { passive: false });
-
-viewport.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (e.touches.length === 2 && initialPinchDist) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.hypot(dx, dy);
-    scale = Math.min(Math.max(0.5, initialScale * (dist / initialPinchDist)), 4);
-    updateTransform();
-  } else if (e.touches.length === 1 && isDrawing) {
-    const pt = getCanvasCoords(e.touches[0].clientX, e.touches[0].clientY);
-    moveStroke(pt.x, pt.y);
-  }
-}, { passive: false });
-
-viewport.addEventListener('touchend', e => {
-  if (e.touches.length < 2) initialPinchDist = null;
-  if (isDrawing) endStroke();
-});
-
-// マウスイベント（PC用）
-canvas.addEventListener('mousedown', e => {
-  const pt = getCanvasCoords(e.clientX, e.clientY);
-  startStroke(pt.x, pt.y);
-});
-window.addEventListener('mousemove', e => {
-  if (!isDrawing) return;
-  const pt = getCanvasCoords(e.clientX, e.clientY);
-  moveStroke(pt.x, pt.y);
-});
-window.addEventListener('mouseup', () => {
-  if (isDrawing) endStroke();
-});
-viewport.addEventListener('wheel', e => {
-  e.preventDefault();
-  scale = Math.min(Math.max(0.5, scale - e.deltaY * 0.001), 4);
-  updateTransform();
-}, { passive: false });
-
-function startStroke(x, y) {
-  if (x < 0 || x >= 480 || y < 0 || y >= 300) return;
-  if (gameState.currentTool === 'bucket') {
-    floodFill(x, y, gameState.currentColor, gameState.bucketTolerance);
-    saveHistoryState();
-    return;
-  }
-  isDrawing = true;
-  lastX = x;
-  lastY = y;
-  drawDot(x, y);
-}
-
-function moveStroke(x, y) {
-  if (!isDrawing) return;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  if (gameState.currentTool === 'pen') {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = gameState.currentColor;
-    ctx.lineWidth = gameState.penSize;
-  } else if (gameState.currentTool === 'eraser') {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = gameState.eraserSize;
-  }
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.stroke();
-  lastX = x;
-  lastY = y;
-}
-
-function drawDot(x, y) {
-  if (gameState.currentTool === 'pen') {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = gameState.currentColor;
-    ctx.beginPath();
-    ctx.arc(x, y, gameState.penSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (gameState.currentTool === 'eraser') {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, gameState.eraserSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function endStroke() {
-  isDrawing = false;
-  ctx.globalCompositeOperation = 'source-over';
-  saveHistoryState();
-}
-
-// 塗りつぶしアルゴリズム
-function floodFill(startX, startY, fillHex, tolerance) {
-  const imgData = ctx.getImageData(0, 0, 480, 300);
-  const data = imgData.data;
-  const startPos = (startY * 480 + startX) * 4;
-  const sr = data[startPos], sg = data[startPos + 1], sb = data[startPos + 2], sa = data[startPos + 3];
-
-  const fr = parseInt(fillHex.slice(1, 3), 16);
-  const fg = parseInt(fillHex.slice(3, 5), 16);
-  const fb = parseInt(fillHex.slice(5, 7), 16);
-
-  if (sr === fr && sg === fg && sb === fb && sa === 255) return;
-
-  const visited = new Uint8Array(480 * 300);
-  const stack = [[startX, startY]];
-
-  while (stack.length > 0) {
-    const [x, y] = stack.pop();
-    const idx = y * 480 + x;
-    if (visited[idx]) continue;
-    visited[idx] = 1;
-
-    const pos = idx * 4;
-    const diff = Math.abs(data[pos] - sr) + Math.abs(data[pos+1] - sg) + Math.abs(data[pos+2] - sb) + Math.abs(data[pos+3] - sa);
-    if (diff <= tolerance) {
-      data[pos] = fr;
-      data[pos + 1] = fg;
-      data[pos + 2] = fb;
-      data[pos + 3] = 255;
-
-      if (x > 0) stack.push([x - 1, y]);
-      if (x < 479) stack.push([x + 1, y]);
-      if (y > 0) stack.push([x, y - 1]);
-      if (y < 299) stack.push([x, y + 1]);
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-}
-
-/* ==========================================
-   5. フレーム進行（最大10枚）・保存・GIF書き出し
-========================================== */
-function updateFrameUI() {
-  const current = gameState.currentFrameIndex + 1;
-  const total = gameState.frames.length;
-  document.getElementById('frame-badge').textContent = `${current}枚目 (全${total}枚 / 最大10枚)`;
-  document.getElementById('btn-next-frame').disabled = (current >= 10);
-}
-
-function nextFrame() {
-  if (gameState.currentFrameIndex >= 9) return;
-  // 現在のフレームを保存
-  gameState.frames[gameState.currentFrameIndex] = ctx.getImageData(0, 0, 480, 300);
-  gameState.currentFrameIndex++;
-
-  if (gameState.frames[gameState.currentFrameIndex]) {
-    ctx.putImageData(gameState.frames[gameState.currentFrameIndex], 0, 0);
-  } else {
-    // 前の絵を薄く残さず新規キャンバス（背景モードなら白）
-    ctx.clearRect(0, 0, 480, 300);
-    if (gameState.gameMode === 'bg') {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 480, 300);
-    }
-    gameState.frames.push(ctx.getImageData(0, 0, 480, 300));
-  }
-  gameState.history = [ctx.getImageData(0, 0, 480, 300)];
-  gameState.redoStack = [];
-  updateFrameUI();
-}
-
-// PNG保存
-function saveCurrentPNG() {
-  const link = document.createElement('a');
-  link.download = `wing_art_frame${gameState.currentFrameIndex + 1}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-  openAfterSaveDialog();
-}
-
-// 完了プレビュー
-let previewTimer = null;
-let previewIndex = 0;
-let previewSpeed = 200;
-
-function openPreview() {
-  gameState.frames[gameState.currentFrameIndex] = ctx.getImageData(0, 0, 480, 300);
-  previewIndex = 0;
-  document.getElementById('modal-preview').classList.add('active');
-  startPreviewLoop();
-}
-
-function closePreview() {
-  clearInterval(previewTimer);
-  document.getElementById('modal-preview').classList.remove('active');
-}
-
-function updateAnimSpeed(val) {
-  previewSpeed = Number(val);
-  document.getElementById('speed-label').textContent = val;
-  startPreviewLoop();
-}
-
-function startPreviewLoop() {
-  clearInterval(previewTimer);
-  const pCanvas = document.getElementById('preview-canvas');
-  const pCtx = pCanvas.getContext('2d');
-
-  const drawStep = () => {
-    pCtx.clearRect(0, 0, 480, 300);
-    pCtx.putImageData(gameState.frames[previewIndex], 0, 0);
-    previewIndex = (previewIndex + 1) % gameState.frames.length;
-  };
-  drawStep();
-  previewTimer = setInterval(drawStep, previewSpeed);
-}
-
-// アニメーションGIF書き出し
-async function exportGIF() {
-  const btn = document.getElementById('btn-save-gif');
-  btn.disabled = true;
-  btn.textContent = 'GIF生成中...';
-
-  // CORS制限回避のためWorkerをBlob生成
-  const workerBlob = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js')
-    .then(res => res.text())
-    .then(txt => new Blob([txt], { type: 'application/javascript' }));
-  const workerUrl = URL.createObjectURL(workerBlob);
-
-  // 透明色のRGB値取得
-  let transHexInt = null;
-  if (gameState.transparentColor) {
-    transHexInt = parseInt(gameState.transparentColor.slice(1), 16);
-  }
-
-  const gif = new GIF({
-    workers: 2,
-    quality: 10,
-    width: 480,
-    height: 300,
-    workerScript: workerUrl,
-    transparent: transHexInt
-  });
-
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = 480;
-  tempCanvas.height = 300;
-  const tempCtx = tempCanvas.getContext('2d');
-
-  gameState.frames.forEach(frameData => {
-    tempCtx.clearRect(0, 0, 480, 300);
-    // 透明色が指定されている場合、完全透明ピクセルを指定色で埋めてGIF透過させる
-    if (gameState.transparentColor) {
-      tempCtx.fillStyle = gameState.transparentColor;
-      tempCtx.fillRect(0, 0, 480, 300);
-      const off = document.createElement('canvas');
-      off.width = 480; off.height = 300;
-      off.getContext('2d').putImageData(frameData, 0, 0);
-      tempCtx.drawImage(off, 0, 0);
-    } else {
-      tempCtx.putImageData(frameData, 0, 0);
-    }
-    gif.addFrame(tempCtx, { copy: true, delay: previewSpeed });
-  });
-
-  gif.on('finished', blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'wing_animation.gif';
-    a.click();
-
-    btn.disabled = false;
-    btn.textContent = '✨ アニメーションGIFで保存';
-    closePreview();
-    openAfterSaveDialog();
-  });
-
-  gif.render();
-}
-
-// 保存後のダイアログ
-function openAfterSaveDialog() {
-  document.getElementById('modal-after-save').classList.add('active');
-}
-function closeAfterSaveDialog() {
-  document.getElementById('modal-after-save').classList.remove('active');
-}
-function returnToMenu() {
-  closeAfterSaveDialog();
-  goScreen('screen-mode2');
-}
-</script>
-</body>
-</html>
+window.addEventListener('DOM
