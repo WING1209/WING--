@@ -285,7 +285,7 @@
     box-shadow: 0 4px 0 #222222;
   }
 
-  /* お絵描き画面（白背景でグリッドをくっきり表示） */
+  /* お絵描き画面 */
   #screen-draw {
     flex-direction: row;
     justify-content: space-between;
@@ -589,7 +589,7 @@
 <div id="screen-title" class="screen active">
   <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
   <div class="blink-start" id="btn-title-start">スタート</div>
-  <div class="version-badge" id="app-version-badge">Ver 1.1</div>
+  <div class="version-badge" id="app-version-badge">Ver 1.2</div>
 </div>
 
 <!-- 2. メニュー1：人数選択 -->
@@ -716,7 +716,7 @@
         塗つぶし<span class="t-sub" id="lbl-fill">標準</span>
       </button>
       <button type="button" class="t-btn" id="btn-tool-grid" onclick="toggleGrid()">
-        グリッド<span class="t-sub">72×60</span>
+        グリッド<span class="t-sub">60×60</span>
       </button>
       <button type="button" class="t-btn" onclick="doUndo()">
         ←<span class="t-sub">戻す</span>
@@ -750,7 +750,6 @@
       <div id="crop-dashed-rect"></div>
     </div>
 
-    <!-- サイズ調整中の確認バー -->
     <div id="crop-confirm-bar">
       <span>ピンチイン/アウトで枠調整</span>
       <button type="button" class="pop-btn green" style="padding:3px 10px; font-size:11px; margin:0;" onclick="applyCropSize()">OK</button>
@@ -798,7 +797,7 @@
 (function() {
   "use strict";
 
-  var APP_VERSION = "Ver 1.1";
+  var APP_VERSION = "Ver 1.2";
   document.getElementById("app-version-badge").textContent = APP_VERSION;
 
   /* ----------------------------
@@ -845,7 +844,7 @@
   /* ----------------------------
      アプリ状態＆セッション保持スタンプ
   ---------------------------- */
-  var registeredStamps = []; // ゲーム終了まで保持
+  var registeredStamps = [];
 
   var state = {
     device: "pc",
@@ -1131,21 +1130,22 @@
     }
   }
 
-  /* 縦72px × 横60px の点線グリッド */
+  /* 60×60px 正方形グリッド */
   function drawGrid() {
     var w = state.canvasW;
     var h = state.canvasH;
+    var step = 60;
     gCtx.clearRect(0, 0, w, h);
-    gCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
+    gCtx.strokeStyle = "rgba(0, 0, 0, 0.35)";
     gCtx.lineWidth = 1;
-    gCtx.setLineDash([4, 3]);
-    for (var x = 60; x < w; x += 60) {
+    gCtx.setLineDash([4, 4]);
+    for (var x = step; x < w; x += step) {
       gCtx.beginPath();
       gCtx.moveTo(x, 0);
       gCtx.lineTo(x, h);
       gCtx.stroke();
     }
-    for (var y = 72; y < h; y += 72) {
+    for (var y = step; y < h; y += step) {
       gCtx.beginPath();
       gCtx.moveTo(0, y);
       gCtx.lineTo(w, y);
@@ -1242,7 +1242,6 @@
       pCtx.strokeStyle = state.drawColor;
       pCtx.lineWidth = state.penSize;
     } else if (state.tool === "eraser") {
-      /* 白背景統一のため白で消去 */
       pCtx.globalCompositeOperation = "source-over";
       pCtx.strokeStyle = "#ffffff";
       pCtx.lineWidth = state.eraserSize;
@@ -1399,9 +1398,8 @@
   var playIdx = 0;
   var playMs = 200;
 
-  /* サイズ調整（点線四角＆ピンチズーム）状態 */
   var croppingActive = false;
-  var cropRatio = 0.65; // 枠の縮尺 (0.25 ~ 1.0)
+  var cropRatio = 0.65;
   var cropPinchDist = 0;
   var cropPinchRatio = 0.65;
 
@@ -1448,7 +1446,6 @@
     timerId = setInterval(step, playMs);
   }
 
-  /* 点線四角のサイズ調整開始 */
   window.startCropSizeMode = function() {
     croppingActive = true;
     cropRatio = 0.65;
@@ -1475,7 +1472,6 @@
     document.getElementById("crop-confirm-bar").classList.remove("active");
   };
 
-  /* ピンチイン／ピンチアウトで点線枠サイズ変更 */
   var cropAreaEl = document.getElementById("preview-crop-area");
   cropAreaEl.addEventListener("touchstart", function(e) {
     if (!croppingActive) return;
@@ -1504,7 +1500,6 @@
     if (e.touches.length < 2) cropPinchDist = 0;
   });
 
-  /* PCホイールでも点線枠サイズ調整可能 */
   cropAreaEl.addEventListener("wheel", function(e) {
     if (!croppingActive) return;
     e.preventDefault();
@@ -1512,7 +1507,6 @@
     updateCropRectVisual();
   }, { passive: false });
 
-  /* OK押下で点線四角の範囲に切り抜き＆容量節約 */
   window.applyCropSize = function() {
     if (!croppingActive) return;
     var oldW = state.canvasW;
@@ -1558,7 +1552,6 @@
     alert("サイズを " + newW + "×" + newH + "px に変更しました！");
   };
 
-  /* スタンプ登録（ゲーム終了まで保持） */
   window.registerStamp = function() {
     state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     var frameClones = [];
@@ -1692,7 +1685,6 @@
         var tctx = tmp.getContext("2d");
         tctx.putImageData(st.frames[fIdx], 0, 0);
 
-        /* 透明色指定がある場合はその色を透明化して描画 */
         if (st.transparentColor) {
           var imgD = tctx.getImageData(0, 0, st.width, st.height);
           var px = imgD.data;
