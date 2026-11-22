@@ -12,7 +12,7 @@
     box-sizing: border-box;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
     font-family: 'M PLUS Rounded 1c', sans-serif;
   }
 
@@ -24,6 +24,7 @@
     overflow: hidden;
     background: #ffde59;
     font-size: 14px;
+    touch-action: manipulation;
   }
 
   /* スマホ縦画面時の警告オーバーレイ（スマホモード時のみ適用） */
@@ -47,9 +48,6 @@
   @keyframes rotatePhone {
     0%, 100% { transform: rotate(0deg); }
     50% { transform: rotate(-90deg); }
-  }
-  body.device-mobile #orientation-warning {
-    display: none;
   }
   @media screen and (max-width: 960px) and (orientation: portrait) {
     body.device-mobile #orientation-warning {
@@ -107,7 +105,7 @@
     color: #fff;
   }
 
-  /* POPなボタン（少しコンパクト化） */
+  /* POPなボタン */
   .pop-btn {
     background: #ff5757;
     color: #fff;
@@ -170,6 +168,7 @@
     padding: 7px 24px;
     border-radius: 50px;
     border: 3px solid #fff;
+    cursor: pointer;
     animation: blink 1s infinite alternate;
   }
   @keyframes blink {
@@ -177,7 +176,7 @@
     100% { opacity: 0.35; transform: scale(0.96); }
   }
 
-  /* カードコンテナ（画面内に必ず収まる設定） */
+  /* カードコンテナ */
   .card-box {
     background: #fff;
     border: 4px solid #333;
@@ -273,7 +272,7 @@
     border-color: #fff;
   }
 
-  /* 透明色確認モーダル（拡大表示＋はい/いいえ） */
+  /* 透明色確認モーダル */
   #modal-confirm-transparent {
     z-index: 120;
   }
@@ -292,7 +291,7 @@
     margin-bottom: 6px;
   }
 
-  /* お絵描きメイン画面（上下バー・左右余白を考慮したフィット配置） */
+  /* お絵描きメイン画面 */
   #screen-draw {
     flex-direction: row;
     background: #444;
@@ -301,7 +300,7 @@
     gap: 6px;
   }
 
-  /* 左側：キャンバスエリア */
+  /* 左側：キャンバスエリア（ここだけ touch-action: none でピンチ＆描画を奪う） */
   #canvas-viewport {
     flex: 1;
     height: 100%;
@@ -313,6 +312,7 @@
     background: #5a5a5a;
     border-radius: 12px;
     border: 2px solid #222;
+    touch-action: none;
   }
   #canvas-wrapper {
     position: relative;
@@ -496,7 +496,7 @@
     align-items: center;
   }
 
-  /* プレビューモーダル＆ダイアログ（見切れ防止） */
+  /* プレビューモーダル＆ダイアログ */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -546,7 +546,7 @@
 <body>
 
 <!-- スマホ／PC判別＆手動切替バー -->
-<div class="device-switcher" id="device-switcher">
+<div class="device-switcher" id="device-switcher" onclick="event.stopPropagation()">
   <button class="device-btn" id="btn-dev-mobile" onclick="setDeviceMode('mobile')">📱 スマホ</button>
   <button class="device-btn" id="btn-dev-pc" onclick="setDeviceMode('pc')">💻 PC</button>
 </div>
@@ -559,9 +559,9 @@
 </div>
 
 <!-- 1. タイトル画面 -->
-<div id="screen-title" class="screen active" onclick="goScreen('screen-mode1')">
+<div id="screen-title" class="screen active">
   <div class="title-logo">WING<span>お絵描き</span><br>PV作成！</div>
-  <div class="start-blink">▶ スタート</div>
+  <div class="start-blink" id="start-btn">▶ スタート</div>
 </div>
 
 <!-- 2. メニュー１：人数選択 -->
@@ -654,7 +654,7 @@
   </div>
 </div>
 
-<!-- 4-B. 透明色確認モーダル（拡大表示＋はい/いいえ） -->
+<!-- 4-B. 透明色確認モーダル -->
 <div id="modal-confirm-transparent" class="modal-overlay">
   <div class="card-box" style="padding: 14px 22px;">
     <h3 style="margin:0; font-size:1rem; color:#333;">この色で良いですか？</h3>
@@ -669,7 +669,6 @@
 
 <!-- 5. お絵描きメイン画面 -->
 <div id="screen-draw" class="screen">
-  <!-- 左側キャンバス -->
   <div id="canvas-viewport">
     <div id="frame-badge">1枚目 / 最大10枚</div>
     <button id="zoom-reset-btn" onclick="resetZoom()">🔍 100%</button>
@@ -679,7 +678,6 @@
     </div>
   </div>
 
-  <!-- 右側GUI -->
   <div id="gui-panel">
     <div class="tool-grid">
       <button class="tool-btn active" id="tool-pen" onclick="handleToolClick('pen')">
@@ -714,10 +712,7 @@
       </button>
     </div>
 
-    <!-- ツール再タップ時のオプションバー -->
     <div id="brush-size-popup"></div>
-
-    <!-- パレット -->
     <div id="gui-palette-container"></div>
   </div>
 </div>
@@ -766,4 +761,191 @@ function setDeviceMode(mode) {
   fitCanvasToViewport();
 }
 
-window.addEventListener('DOM
+window.addEventListener('DOMContentLoaded', () => {
+  setDeviceMode(detectDevice());
+
+  // タイトル画面の遷移イベントを確実にバインド
+  const titleScreen = document.getElementById('screen-title');
+  const startBtn = document.getElementById('start-btn');
+  titleScreen.addEventListener('click', () => goScreen('screen-mode1'));
+  startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    goScreen('screen-mode1');
+  });
+});
+
+window.addEventListener('resize', () => {
+  fitCanvasToViewport();
+});
+
+/* ==========================================
+   1. 250色カラーパレット生成
+========================================== */
+const PALETTE_250 = [];
+(function generate250Colors() {
+  for (let i = 0; i < 10; i++) {
+    const v = Math.round((255 / 9) * i);
+    const hex = '#' + [v, v, v].map(x => x.toString(16).padStart(2, '0')).join('');
+    PALETTE_250.push(hex);
+  }
+  const hues = 24;
+  const tones = [
+    [100, 85], [100, 70], [100, 55], [100, 45], [100, 30],
+    [70, 80],  [70, 60],  [70, 40],  [45, 75],  [45, 45]
+  ];
+  for (let h = 0; h < hues; h++) {
+    const hue = Math.round((360 / hues) * h);
+    for (let t = 0; t < tones.length; t++) {
+      PALETTE_250.push(hslToHex(hue, tones[t][0], tones[t][1]));
+    }
+  }
+})();
+
+function hslToHex(h, s, l) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/* ==========================================
+   2. 画面遷移とゲームステート管理
+========================================== */
+let gameState = {
+  playMode: 'single',
+  gameMode: 'anim',
+  transparentColor: null,
+  pendingTransparentColor: null,
+  currentColor: '#000000',
+  currentTool: 'pen',
+  penSize: 4,
+  eraserSize: 10,
+  bucketTolerance: 25,
+  gridVisible: false,
+  frames: [],
+  currentFrameIndex: 0,
+  history: [],
+  redoStack: []
+};
+
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+  if (id === 'screen-draw') {
+    setTimeout(fitCanvasToViewport, 30);
+  }
+}
+
+function selectPlayMode(mode) {
+  gameState.playMode = mode;
+  if (mode === 'single') {
+    goScreen('screen-mode2');
+  } else {
+    goScreen('screen-multi-role');
+  }
+}
+
+function createHostRoom() {
+  const count = document.getElementById('host-player-count').value;
+  const pass = Math.floor(1000 + Math.random() * 9000);
+  document.getElementById('generated-pass').textContent = pass;
+  document.getElementById('host-wait-status').textContent = `接続まち... (1 / ${count}人)`;
+  goScreen('screen-multi-host-wait');
+}
+
+function joinGuestRoom() {
+  const val = document.getElementById('guest-pass-input').value;
+  if (!/^\d{4}$/.test(val)) {
+    alert('4桁の数字を入力してください');
+    return;
+  }
+  goScreen('screen-multi-guest-wait');
+}
+
+function selectGameMode(mode) {
+  gameState.gameMode = mode;
+  if (mode === 'anim') {
+    renderTransparentSelector();
+    goScreen('screen-transparent-select');
+  } else {
+    gameState.transparentColor = null;
+    initDrawingSession();
+    goScreen('screen-draw');
+  }
+}
+
+function renderTransparentSelector() {
+  const grid = document.getElementById('palette-250-grid');
+  grid.innerHTML = '';
+  PALETTE_250.forEach(hex => {
+    const cell = document.createElement('div');
+    cell.className = 'color-cell';
+    cell.style.backgroundColor = hex;
+    cell.onclick = () => {
+      gameState.pendingTransparentColor = hex;
+      document.getElementById('confirm-color-swatch').style.backgroundColor = hex;
+      document.getElementById('confirm-color-hex').textContent = hex.toUpperCase();
+      document.getElementById('modal-confirm-transparent').classList.add('active');
+    };
+    grid.appendChild(cell);
+  });
+}
+
+function confirmTransparentYes() {
+  gameState.transparentColor = gameState.pendingTransparentColor;
+  document.getElementById('modal-confirm-transparent').classList.remove('active');
+  initDrawingSession();
+  goScreen('screen-draw');
+}
+
+function confirmTransparentNo() {
+  gameState.pendingTransparentColor = null;
+  document.getElementById('modal-confirm-transparent').classList.remove('active');
+}
+
+/* ==========================================
+   3. お絵描きエンジン＆ツール制御
+========================================== */
+const canvas = document.getElementById('draw-canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const gridCanvas = document.getElementById('grid-canvas');
+const gridCtx = gridCanvas.getContext('2d');
+
+function initDrawingSession() {
+  ctx.clearRect(0, 0, 480, 300);
+  if (gameState.gameMode === 'bg') {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 480, 300);
+  }
+  gameState.frames = [ctx.getImageData(0, 0, 480, 300)];
+  gameState.currentFrameIndex = 0;
+  gameState.history = [ctx.getImageData(0, 0, 480, 300)];
+  gameState.redoStack = [];
+  updateFrameUI();
+  renderGuiPalette();
+  drawGridLines();
+  resetZoom();
+}
+
+function renderGuiPalette() {
+  const container = document.getElementById('gui-palette-container');
+  container.innerHTML = '';
+  if (gameState.currentColor === gameState.transparentColor) {
+    gameState.currentColor = PALETTE_250.find(c => c !== gameState.transparentColor);
+  }
+
+  PALETTE_250.forEach(hex => {
+    const div = document.createElement('div');
+    div.className = 'gui-color';
+    div.style.backgroundColor = hex;
+    if (hex === gameState.transparentColor) {
+      div.classList.add('disabled-transparent');
+    } else {
+      if (hex === gameState.currentColor) div.classList.add('selected');
+      div.onclick = () => {
+        gameState.currentColor = hex;
