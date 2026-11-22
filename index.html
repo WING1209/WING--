@@ -47,7 +47,7 @@
     margin-bottom: 10px;
   }
 
-  /* 画面コンテナ（全画面固定） */
+  /* 画面コンテナ */
   .screen {
     display: none;
     position: fixed;
@@ -106,9 +106,9 @@
     color: #ffffff;
     border: 3px solid #222222;
     border-radius: 14px;
-    padding: 8px 18px;
-    margin: 5px;
-    font-size: 14px;
+    padding: 7px 16px;
+    margin: 4px;
+    font-size: 13px;
     font-weight: bold;
     box-shadow: 0 4px 0 #222222;
     cursor: pointer;
@@ -120,6 +120,7 @@
   .pop-btn.blue { background: #1e90ff; }
   .pop-btn.green { background: #2ed573; color: #111111; }
   .pop-btn.purple { background: #9b59b6; }
+  .pop-btn.orange { background: #ffa502; color: #111111; }
   .pop-btn.gray { background: #dcdde1; color: #222222; }
   .pop-btn:disabled {
     opacity: 0.45;
@@ -142,7 +143,7 @@
     color: #1e90ff;
   }
   .blink-start {
-    margin-top: 22px;
+    margin-top: 20px;
     background: #222222;
     color: #ffffff;
     border: 3px solid #ffffff;
@@ -176,16 +177,16 @@
     background: #ffffff;
     border: 3px solid #222222;
     border-radius: 18px;
-    padding: 12px 18px;
+    padding: 10px 16px;
     box-shadow: 0 5px 0 #222222;
     text-align: center;
     max-width: 96%;
-    max-height: 92%;
+    max-height: 93%;
     overflow-y: auto;
   }
   .panel-heading {
-    margin: 0 0 10px 0;
-    font-size: 15px;
+    margin: 0 0 8px 0;
+    font-size: 14px;
     font-weight: bold;
     color: #222222;
   }
@@ -212,7 +213,7 @@
     width: 140px;
   }
 
-  /* 透明色パレット選択画面（大きめ升目・小さめ文字） */
+  /* 透明色パレット選択画面 */
   #screen-transparent .panel-card {
     width: 96%;
     height: 90%;
@@ -266,11 +267,11 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.78);
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    padding: 10px;
+    padding: 8px;
   }
   .modal-bg.open {
     display: flex;
@@ -284,7 +285,7 @@
     box-shadow: 0 4px 0 #222222;
   }
 
-  /* お絵描き画面 */
+  /* お絵描き画面（白背景でグリッドをくっきり表示） */
   #screen-draw {
     flex-direction: row;
     justify-content: space-between;
@@ -297,7 +298,7 @@
     flex: 1;
     height: 100%;
     position: relative;
-    background: #575757;
+    background: #6c757d;
     border: 2px solid #222222;
     border-radius: 10px;
     overflow: hidden;
@@ -312,13 +313,6 @@
     height: 300px;
     transform-origin: center center;
     background-color: #ffffff;
-    background-image:
-      linear-gradient(45deg, #cccccc 25%, transparent 25%),
-      linear-gradient(-45deg, #cccccc 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #cccccc 75%),
-      linear-gradient(-45deg, transparent 75%, #cccccc 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   }
   #paint-canvas, #grid-overlay-canvas {
@@ -459,17 +453,119 @@
     pointer-events: none;
   }
 
-  /* プレビュー画面 */
+  /* プレビュー＆点線サイズ調整枠 */
+  .preview-box-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    max-height: 38vh;
+    aspect-ratio: 480 / 300;
+    margin: 0 auto 6px auto;
+    touch-action: none;
+  }
   #preview-stage {
     border: 3px solid #222222;
     background: #ffffff;
-    max-width: 100%;
-    max-height: 42vh;
-    width: auto;
-    height: auto;
-    aspect-ratio: 480 / 300;
+    width: 100%;
+    height: 100%;
     display: block;
-    margin: 0 auto 6px auto;
+  }
+  #crop-dashed-rect {
+    display: none;
+    position: absolute;
+    border: 3px dashed #ff3838;
+    background: rgba(255, 56, 56, 0.14);
+    pointer-events: none;
+    transform-origin: center center;
+  }
+  #crop-dashed-rect.active {
+    display: block;
+  }
+  #crop-confirm-bar {
+    display: none;
+    background: #fff3cd;
+    border: 2px solid #222222;
+    border-radius: 10px;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  #crop-confirm-bar.active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  /* （３）PV（合体）モード画面 */
+  #screen-pv {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    background: #2f3542;
+    padding: 6px;
+    gap: 6px;
+  }
+  #pv-stage-wrap {
+    flex: 1;
+    height: 100%;
+    background: #6c757d;
+    border: 2px solid #222222;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    touch-action: none;
+  }
+  #pv-canvas {
+    width: 480px;
+    height: 300px;
+    background: #ffffff;
+    border: 3px solid #222222;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  #pv-side {
+    width: 225px;
+    height: 100%;
+    background: #ffffff;
+    border: 3px solid #222222;
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  #stamp-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 2px solid #222222;
+    border-radius: 8px;
+    padding: 4px;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stamp-item {
+    border: 2px solid #222222;
+    border-radius: 8px;
+    padding: 4px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .stamp-item.selected-stamp {
+    background: #ffde59;
+    border-color: #ff3838;
   }
 </style>
 </head>
@@ -493,7 +589,7 @@
 <div id="screen-title" class="screen active">
   <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
   <div class="blink-start" id="btn-title-start">スタート</div>
-  <div class="version-badge" id="app-version-badge">Ver 1.0</div>
+  <div class="version-badge" id="app-version-badge">Ver 1.1</div>
 </div>
 
 <!-- 2. メニュー1：人数選択 -->
@@ -568,11 +664,11 @@
     <h2 class="panel-heading">ゲームモード選択</h2>
     <button type="button" class="pop-btn" onclick="chooseGameMode('anim')">（１）アニメーション素材</button><br>
     <button type="button" class="pop-btn blue" onclick="chooseGameMode('bg')">（２）背景</button><br>
-    <button type="button" class="pop-btn purple" onclick="alert('（３）PV（合体）はアニメ素材・背景作成後に組み合わせるモードです')">（３）PV（合体）</button>
+    <button type="button" class="pop-btn purple" onclick="openPvMode()">（３）PV（合体）</button>
   </div>
 </div>
 
-<!-- 4. 透明色選択（250色パレット・大きめ表示） -->
+<!-- 4. 透明色選択 -->
 <div id="screen-transparent" class="screen">
   <div class="panel-card">
     <div class="trans-top">
@@ -597,7 +693,7 @@
   </div>
 </div>
 
-<!-- 5. お絵描き画面（480×300固定） -->
+<!-- 5. お絵描き画面 -->
 <div id="screen-draw" class="screen">
   <div id="canvas-area">
     <div class="canvas-tag" id="frame-info">1枚目 / 最大10枚</div>
@@ -648,17 +744,48 @@
 <div id="modal-preview" class="modal-bg">
   <div class="panel-card">
     <div style="font-size:13px; font-weight:bold; margin-bottom:4px;">アニメーションプレビュー</div>
-    <canvas id="preview-stage" width="480" height="300"></canvas>
-    <div style="font-size:11px; font-weight:bold; margin-bottom:6px;">
-      スピード: <span id="speed-val">200</span>ms<br>
-      <input type="range" id="speed-range" min="50" max="1000" step="50" value="200" style="width:180px;" oninput="changeSpeed(this.value)">
+
+    <div class="preview-box-wrap" id="preview-crop-area">
+      <canvas id="preview-stage" width="480" height="300"></canvas>
+      <div id="crop-dashed-rect"></div>
     </div>
-    <button type="button" class="pop-btn green" style="padding:6px 14px; font-size:12px;" onclick="saveAnimationFile()">保存</button>
-    <button type="button" class="pop-btn gray" style="padding:6px 14px; font-size:12px;" onclick="closeAnimPreview()">もどる</button>
+
+    <!-- サイズ調整中の確認バー -->
+    <div id="crop-confirm-bar">
+      <span>ピンチイン/アウトで枠調整</span>
+      <button type="button" class="pop-btn green" style="padding:3px 10px; font-size:11px; margin:0;" onclick="applyCropSize()">OK</button>
+      <button type="button" class="pop-btn gray" style="padding:3px 10px; font-size:11px; margin:0;" onclick="cancelCropSize()">取消</button>
+    </div>
+
+    <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">
+      スピード: <span id="speed-val">200</span>ms
+      <input type="range" id="speed-range" min="50" max="1000" step="50" value="200" style="width:140px; vertical-align:middle;" oninput="changeSpeed(this.value)">
+    </div>
+
+    <div>
+      <button type="button" class="pop-btn orange" style="padding:5px 11px; font-size:11px;" onclick="startCropSizeMode()">サイズ調整</button>
+      <button type="button" class="pop-btn purple" style="padding:5px 11px; font-size:11px;" onclick="registerStamp()">スタンプ登録</button>
+      <button type="button" class="pop-btn green" style="padding:5px 11px; font-size:11px;" onclick="saveAnimationFile()">保存</button>
+      <button type="button" class="pop-btn gray" style="padding:5px 11px; font-size:11px;" onclick="closeAnimPreview()">もどる</button>
+    </div>
   </div>
 </div>
 
-<!-- 7. 保存後メニュー戻り確認ダイアログ -->
+<!-- 7. （３）PV（合体）モード画面 -->
+<div id="screen-pv" class="screen">
+  <div id="pv-stage-wrap">
+    <canvas id="pv-canvas" width="480" height="300"></canvas>
+  </div>
+  <div id="pv-side">
+    <div style="font-size:12px; font-weight:bold; text-align:center;">登録スタンプ（タップで配置）</div>
+    <div id="stamp-list"></div>
+    <div style="font-size:10px; color:#555; text-align:center;">配置済みスタンプをドラッグで移動</div>
+    <button type="button" class="pop-btn blue" style="padding:5px 10px; font-size:11px; margin:0;" onclick="placeSelectedStamp()">選択スタンプを配置</button>
+    <button type="button" class="pop-btn gray" style="padding:5px 10px; font-size:11px; margin:0;" onclick="exitPvMode()">メニューへ戻る</button>
+  </div>
+</div>
+
+<!-- 8. 保存後メニュー戻り確認ダイアログ -->
 <div id="modal-saved-dialog" class="modal-bg">
   <div class="panel-card">
     <div style="font-size:14px; font-weight:bold; margin-bottom:8px;">メニュー画面へ戻りますか？</div>
@@ -671,7 +798,7 @@
 (function() {
   "use strict";
 
-  var APP_VERSION = "Ver 1.0";
+  var APP_VERSION = "Ver 1.1";
   document.getElementById("app-version-badge").textContent = APP_VERSION;
 
   /* ----------------------------
@@ -716,8 +843,10 @@
   }
 
   /* ----------------------------
-     アプリ状態
+     アプリ状態＆セッション保持スタンプ
   ---------------------------- */
+  var registeredStamps = []; // ゲーム終了まで保持
+
   var state = {
     device: "pc",
     playMode: "single",
@@ -730,6 +859,8 @@
     eraserSize: 10,
     fillTol: 25,
     gridOn: false,
+    canvasW: 480,
+    canvasH: 300,
     frames: [],
     frameIdx: 0,
     undoList: [],
@@ -870,21 +1001,35 @@
   var pCtx = pCanvas.getContext("2d");
   var gCanvas = document.getElementById("grid-overlay-canvas");
   var gCtx = gCanvas.getContext("2d");
+  var cBox = document.getElementById("canvas-box");
+
+  function setCanvasDimensions(w, h) {
+    state.canvasW = w;
+    state.canvasH = h;
+    pCanvas.width = w;
+    pCanvas.height = h;
+    pCanvas.style.width = w + "px";
+    pCanvas.style.height = h + "px";
+    gCanvas.width = w;
+    gCanvas.height = h;
+    gCanvas.style.width = w + "px";
+    gCanvas.style.height = h + "px";
+    cBox.style.width = w + "px";
+    cBox.style.height = h + "px";
+    drawGrid();
+  }
 
   function startPaintSession() {
-    pCtx.clearRect(0, 0, 480, 300);
-    if (state.gameMode === "bg") {
-      pCtx.fillStyle = "#ffffff";
-      pCtx.fillRect(0, 0, 480, 300);
-    }
-    var initImg = pCtx.getImageData(0, 0, 480, 300);
+    setCanvasDimensions(480, 300);
+    pCtx.fillStyle = "#ffffff";
+    pCtx.fillRect(0, 0, state.canvasW, state.canvasH);
+    var initImg = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     state.frames = [initImg];
     state.frameIdx = 0;
     state.undoList = [initImg];
     state.redoList = [];
     refreshFrameLabel();
     buildSidePalette();
-    drawGrid();
     fitDrawCanvas();
   }
 
@@ -986,21 +1131,24 @@
     }
   }
 
+  /* 縦72px × 横60px の点線グリッド */
   function drawGrid() {
-    gCtx.clearRect(0, 0, 480, 300);
-    gCtx.strokeStyle = "rgba(0,0,0,0.35)";
+    var w = state.canvasW;
+    var h = state.canvasH;
+    gCtx.clearRect(0, 0, w, h);
+    gCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
     gCtx.lineWidth = 1;
-    gCtx.setLineDash([3, 3]);
-    for (var x = 60; x < 480; x += 60) {
+    gCtx.setLineDash([4, 3]);
+    for (var x = 60; x < w; x += 60) {
       gCtx.beginPath();
       gCtx.moveTo(x, 0);
-      gCtx.lineTo(x, 300);
+      gCtx.lineTo(x, h);
       gCtx.stroke();
     }
-    for (var y = 72; y < 300; y += 72) {
+    for (var y = 72; y < h; y += 72) {
       gCtx.beginPath();
       gCtx.moveTo(0, y);
-      gCtx.lineTo(480, y);
+      gCtx.lineTo(w, y);
       gCtx.stroke();
     }
   }
@@ -1012,7 +1160,7 @@
   };
 
   function pushUndo() {
-    var snap = pCtx.getImageData(0, 0, 480, 300);
+    var snap = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     state.undoList.push(snap);
     if (state.undoList.length > 25) state.undoList.shift();
     state.redoList = [];
@@ -1040,7 +1188,6 @@
      フィット＆ピンチズーム＆描画
   ---------------------------- */
   var cArea = document.getElementById("canvas-area");
-  var cBox = document.getElementById("canvas-box");
   var fitScale = 1;
   var userScale = 1;
   var drawing = false;
@@ -1052,7 +1199,7 @@
     var aw = cArea.clientWidth - 12;
     var ah = cArea.clientHeight - 12;
     if (aw <= 0 || ah <= 0) return;
-    fitScale = Math.min(aw / 480, ah / 300, 1.5);
+    fitScale = Math.min(aw / state.canvasW, ah / state.canvasH, 1.5);
     window.resetCanvasView();
   }
 
@@ -1068,13 +1215,13 @@
   function toLocalXY(cx, cy) {
     var r = pCanvas.getBoundingClientRect();
     return {
-      x: Math.floor((cx - r.left) * (480 / r.width)),
-      y: Math.floor((cy - r.top) * (300 / r.height))
+      x: Math.floor((cx - r.left) * (state.canvasW / r.width)),
+      y: Math.floor((cy - r.top) * (state.canvasH / r.height))
     };
   }
 
   function strokeStart(x, y) {
-    if (x < 0 || x >= 480 || y < 0 || y >= 300) return;
+    if (x < 0 || x >= state.canvasW || y < 0 || y >= state.canvasH) return;
     if (state.tool === "fill") {
       floodFillCanvas(x, y, state.drawColor, state.fillTol);
       pushUndo();
@@ -1095,7 +1242,9 @@
       pCtx.strokeStyle = state.drawColor;
       pCtx.lineWidth = state.penSize;
     } else if (state.tool === "eraser") {
-      pCtx.globalCompositeOperation = "destination-out";
+      /* 白背景統一のため白で消去 */
+      pCtx.globalCompositeOperation = "source-over";
+      pCtx.strokeStyle = "#ffffff";
       pCtx.lineWidth = state.eraserSize;
     }
     pCtx.beginPath();
@@ -1114,7 +1263,8 @@
       pCtx.arc(x, y, state.penSize / 2, 0, Math.PI * 2);
       pCtx.fill();
     } else if (state.tool === "eraser") {
-      pCtx.globalCompositeOperation = "destination-out";
+      pCtx.globalCompositeOperation = "source-over";
+      pCtx.fillStyle = "#ffffff";
       pCtx.beginPath();
       pCtx.arc(x, y, state.eraserSize / 2, 0, Math.PI * 2);
       pCtx.fill();
@@ -1178,21 +1328,23 @@
   }, { passive: false });
 
   function floodFillCanvas(sx, sy, hex, tol) {
-    var img = pCtx.getImageData(0, 0, 480, 300);
+    var w = state.canvasW;
+    var h = state.canvasH;
+    var img = pCtx.getImageData(0, 0, w, h);
     var d = img.data;
-    var sp = (sy * 480 + sx) * 4;
+    var sp = (sy * w + sx) * 4;
     var sr = d[sp], sg = d[sp + 1], sb = d[sp + 2], sa = d[sp + 3];
     var fr = parseInt(hex.slice(1, 3), 16);
     var fg = parseInt(hex.slice(3, 5), 16);
     var fb = parseInt(hex.slice(5, 7), 16);
     if (sr === fr && sg === fg && sb === fb && sa === 255) return;
 
-    var seen = new Uint8Array(480 * 300);
+    var seen = new Uint8Array(w * h);
     var stack = [[sx, sy]];
     while (stack.length > 0) {
       var cur = stack.pop();
       var x = cur[0], y = cur[1];
-      var idx = y * 480 + x;
+      var idx = y * w + x;
       if (seen[idx]) continue;
       seen[idx] = 1;
       var pos = idx * 4;
@@ -1203,16 +1355,16 @@
         d[pos + 2] = fb;
         d[pos + 3] = 255;
         if (x > 0) stack.push([x - 1, y]);
-        if (x < 479) stack.push([x + 1, y]);
+        if (x < w - 1) stack.push([x + 1, y]);
         if (y > 0) stack.push([x, y - 1]);
-        if (y < 299) stack.push([x, y + 1]);
+        if (y < h - 1) stack.push([x, y + 1]);
       }
     }
     pCtx.putImageData(img, 0, 0);
   }
 
   /* ----------------------------
-     枚数管理（最大10枚）・プレビュー・保存
+     枚数管理（最大10枚）・プレビュー・サイズ調整・スタンプ登録
   ---------------------------- */
   function refreshFrameLabel() {
     document.getElementById("frame-info").textContent = (state.frameIdx + 1) + "枚目 (全" + state.frames.length + "枚 / 最大10枚)";
@@ -1221,19 +1373,16 @@
 
   window.goNextFrame = function() {
     if (state.frameIdx >= 9) return;
-    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, 480, 300);
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     state.frameIdx++;
     if (state.frames[state.frameIdx]) {
       pCtx.putImageData(state.frames[state.frameIdx], 0, 0);
     } else {
-      pCtx.clearRect(0, 0, 480, 300);
-      if (state.gameMode === "bg") {
-        pCtx.fillStyle = "#ffffff";
-        pCtx.fillRect(0, 0, 480, 300);
-      }
-      state.frames.push(pCtx.getImageData(0, 0, 480, 300));
+      pCtx.fillStyle = "#ffffff";
+      pCtx.fillRect(0, 0, state.canvasW, state.canvasH);
+      state.frames.push(pCtx.getImageData(0, 0, state.canvasW, state.canvasH));
     }
-    state.undoList = [pCtx.getImageData(0, 0, 480, 300)];
+    state.undoList = [pCtx.getImageData(0, 0, state.canvasW, state.canvasH)];
     state.redoList = [];
     refreshFrameLabel();
   };
@@ -1250,14 +1399,30 @@
   var playIdx = 0;
   var playMs = 200;
 
+  /* サイズ調整（点線四角＆ピンチズーム）状態 */
+  var croppingActive = false;
+  var cropRatio = 0.65; // 枠の縮尺 (0.25 ~ 1.0)
+  var cropPinchDist = 0;
+  var cropPinchRatio = 0.65;
+
+  function syncPreviewCanvasSize() {
+    var pv = document.getElementById("preview-stage");
+    pv.width = state.canvasW;
+    pv.height = state.canvasH;
+    document.getElementById("preview-crop-area").style.aspectRatio = state.canvasW + " / " + state.canvasH;
+  }
+
   window.openAnimPreview = function() {
-    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, 480, 300);
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    syncPreviewCanvasSize();
+    cancelCropSize();
     playIdx = 0;
     document.getElementById("modal-preview").classList.add("open");
     runPreviewLoop();
   };
 
   window.closeAnimPreview = function() {
+    cancelCropSize();
     if (timerId) clearInterval(timerId);
     document.getElementById("modal-preview").classList.remove("open");
   };
@@ -1273,32 +1438,168 @@
     var pv = document.getElementById("preview-stage");
     var pc = pv.getContext("2d");
     function step() {
-      pc.clearRect(0, 0, 480, 300);
-      pc.putImageData(state.frames[playIdx], 0, 0);
+      pc.clearRect(0, 0, pv.width, pv.height);
+      if (state.frames[playIdx]) {
+        pc.putImageData(state.frames[playIdx], 0, 0);
+      }
       playIdx = (playIdx + 1) % state.frames.length;
     }
     step();
     timerId = setInterval(step, playMs);
   }
 
+  /* 点線四角のサイズ調整開始 */
+  window.startCropSizeMode = function() {
+    croppingActive = true;
+    cropRatio = 0.65;
+    updateCropRectVisual();
+    document.getElementById("crop-confirm-bar").classList.add("active");
+  };
+
+  function updateCropRectVisual() {
+    var rectEl = document.getElementById("crop-dashed-rect");
+    rectEl.classList.add("active");
+    var wPct = cropRatio * 100;
+    var hPct = cropRatio * 100;
+    var leftPct = (100 - wPct) / 2;
+    var topPct = (100 - hPct) / 2;
+    rectEl.style.width = wPct + "%";
+    rectEl.style.height = hPct + "%";
+    rectEl.style.left = leftPct + "%";
+    rectEl.style.top = topPct + "%";
+  }
+
+  window.cancelCropSize = function() {
+    croppingActive = false;
+    document.getElementById("crop-dashed-rect").classList.remove("active");
+    document.getElementById("crop-confirm-bar").classList.remove("active");
+  };
+
+  /* ピンチイン／ピンチアウトで点線枠サイズ変更 */
+  var cropAreaEl = document.getElementById("preview-crop-area");
+  cropAreaEl.addEventListener("touchstart", function(e) {
+    if (!croppingActive) return;
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      cropPinchDist = Math.sqrt(dx * dx + dy * dy);
+      cropPinchRatio = cropRatio;
+    }
+  }, { passive: false });
+
+  cropAreaEl.addEventListener("touchmove", function(e) {
+    if (!croppingActive) return;
+    if (e.touches.length === 2 && cropPinchDist > 0) {
+      e.preventDefault();
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      cropRatio = Math.min(Math.max(0.25, cropPinchRatio * (d / cropPinchDist)), 1.0);
+      updateCropRectVisual();
+    }
+  }, { passive: false });
+
+  cropAreaEl.addEventListener("touchend", function(e) {
+    if (e.touches.length < 2) cropPinchDist = 0;
+  });
+
+  /* PCホイールでも点線枠サイズ調整可能 */
+  cropAreaEl.addEventListener("wheel", function(e) {
+    if (!croppingActive) return;
+    e.preventDefault();
+    cropRatio = Math.min(Math.max(0.25, cropRatio - e.deltaY * 0.001), 1.0);
+    updateCropRectVisual();
+  }, { passive: false });
+
+  /* OK押下で点線四角の範囲に切り抜き＆容量節約 */
+  window.applyCropSize = function() {
+    if (!croppingActive) return;
+    var oldW = state.canvasW;
+    var oldH = state.canvasH;
+    var newW = Math.max(24, Math.round(oldW * cropRatio));
+    var newH = Math.max(24, Math.round(oldH * cropRatio));
+    var sx = Math.floor((oldW - newW) / 2);
+    var sy = Math.floor((oldH - newH) / 2);
+
+    var srcCanvas = document.createElement("canvas");
+    srcCanvas.width = oldW;
+    srcCanvas.height = oldH;
+    var srcCtx = srcCanvas.getContext("2d");
+
+    var dstCanvas = document.createElement("canvas");
+    dstCanvas.width = newW;
+    dstCanvas.height = newH;
+    var dstCtx = dstCanvas.getContext("2d");
+
+    var croppedFrames = [];
+    for (var i = 0; i < state.frames.length; i++) {
+      srcCtx.clearRect(0, 0, oldW, oldH);
+      srcCtx.putImageData(state.frames[i], 0, 0);
+      dstCtx.fillStyle = "#ffffff";
+      dstCtx.fillRect(0, 0, newW, newH);
+      dstCtx.drawImage(srcCanvas, sx, sy, newW, newH, 0, 0, newW, newH);
+      croppedFrames.push(dstCtx.getImageData(0, 0, newW, newH));
+    }
+
+    state.frames = croppedFrames;
+    setCanvasDimensions(newW, newH);
+    syncPreviewCanvasSize();
+
+    var curFrame = state.frames[state.frameIdx] || state.frames[0];
+    state.frameIdx = Math.min(state.frameIdx, state.frames.length - 1);
+    pCtx.putImageData(curFrame, 0, 0);
+    state.undoList = [curFrame];
+    state.redoList = [];
+
+    cancelCropSize();
+    fitDrawCanvas();
+    runPreviewLoop();
+    alert("サイズを " + newW + "×" + newH + "px に変更しました！");
+  };
+
+  /* スタンプ登録（ゲーム終了まで保持） */
+  window.registerStamp = function() {
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    var frameClones = [];
+    for (var i = 0; i < state.frames.length; i++) {
+      var src = state.frames[i];
+      var copy = new ImageData(new Uint8ClampedArray(src.data), src.width, src.height);
+      frameClones.push(copy);
+    }
+    var stampObj = {
+      id: "stamp_" + (registeredStamps.length + 1) + "_" + Date.now(),
+      name: "スタンプ" + (registeredStamps.length + 1),
+      width: state.canvasW,
+      height: state.canvasH,
+      speed: playMs,
+      transparentColor: state.transparentColor,
+      frames: frameClones
+    };
+    registeredStamps.push(stampObj);
+    alert("「" + stampObj.name + "」をスタンプ登録しました！（PV合体モードで使えます）");
+  };
+
   window.saveAnimationFile = function() {
+    var w = state.canvasW;
+    var h = state.canvasH;
     var sheet = document.createElement("canvas");
-    sheet.width = 480 * state.frames.length;
-    sheet.height = 300;
+    sheet.width = w * state.frames.length;
+    sheet.height = h;
     var sctx = sheet.getContext("2d");
     var tmp = document.createElement("canvas");
-    tmp.width = 480;
-    tmp.height = 300;
+    tmp.width = w;
+    tmp.height = h;
     var tctx = tmp.getContext("2d");
 
     for (var i = 0; i < state.frames.length; i++) {
-      tctx.clearRect(0, 0, 480, 300);
+      tctx.clearRect(0, 0, w, h);
       tctx.putImageData(state.frames[i], 0, 0);
-      sctx.drawImage(tmp, i * 480, 0);
+      sctx.drawImage(tmp, i * w, 0);
     }
 
     var a = document.createElement("a");
-    a.download = "wing_anim_sheet_" + state.frames.length + "frames.png";
+    a.download = "wing_anim_" + w + "x" + h + "_" + state.frames.length + "frames.png";
     a.href = sheet.toDataURL("image/png");
     a.click();
 
@@ -1312,6 +1613,154 @@
       window.showScreen("screen-menu2");
     }
   };
+
+  /* ----------------------------
+     （３）PV（合体）モード処理
+  ---------------------------- */
+  var pvCanvas = document.getElementById("pv-canvas");
+  var pvCtx = pvCanvas.getContext("2d");
+  var selectedStampIdx = 0;
+  var placedStamps = [];
+  var pvTimer = null;
+  var draggingPlacedIdx = -1;
+  var dragOffsetX = 0;
+  var dragOffsetY = 0;
+
+  window.openPvMode = function() {
+    renderStampList();
+    window.showScreen("screen-pv");
+    startPvLoop();
+  };
+
+  window.exitPvMode = function() {
+    if (pvTimer) clearInterval(pvTimer);
+    window.showScreen("screen-menu2");
+  };
+
+  function renderStampList() {
+    var listEl = document.getElementById("stamp-list");
+    listEl.innerHTML = "";
+    if (registeredStamps.length === 0) {
+      listEl.innerHTML = "<div style='font-size:10px; color:#666; padding:6px;'>まだスタンプがありません。<br>アニメ素材の「完了」→「スタンプ登録」で作れます。</div>";
+      return;
+    }
+    for (var i = 0; i < registeredStamps.length; i++) {
+      (function(idx, st) {
+        var row = document.createElement("div");
+        row.className = "stamp-item" + (idx === selectedStampIdx ? " selected-stamp" : "");
+        row.textContent = st.name + " (" + st.width + "×" + st.height + " / " + st.frames.length + "枚)";
+        row.onclick = function() {
+          selectedStampIdx = idx;
+          renderStampList();
+        };
+        listEl.appendChild(row);
+      })(i, registeredStamps[i]);
+    }
+  }
+
+  window.placeSelectedStamp = function() {
+    if (registeredStamps.length === 0) {
+      alert("先にスタンプ登録を行ってください");
+      return;
+    }
+    var st = registeredStamps[selectedStampIdx] || registeredStamps[0];
+    placedStamps.push({
+      stamp: st,
+      x: 40 + (placedStamps.length * 20) % 240,
+      y: 30 + (placedStamps.length * 15) % 140,
+      frameCounter: 0
+    });
+  };
+
+  function startPvLoop() {
+    if (pvTimer) clearInterval(pvTimer);
+    var tick = 0;
+    pvTimer = setInterval(function() {
+      tick += 50;
+      pvCtx.fillStyle = "#ffffff";
+      pvCtx.fillRect(0, 0, pvCanvas.width, pvCanvas.height);
+
+      for (var i = 0; i < placedStamps.length; i++) {
+        var ps = placedStamps[i];
+        var st = ps.stamp;
+        var stepFrames = Math.max(1, Math.round(st.speed / 50));
+        var fIdx = Math.floor(tick / (stepFrames * 50)) % st.frames.length;
+
+        var tmp = document.createElement("canvas");
+        tmp.width = st.width;
+        tmp.height = st.height;
+        var tctx = tmp.getContext("2d");
+        tctx.putImageData(st.frames[fIdx], 0, 0);
+
+        /* 透明色指定がある場合はその色を透明化して描画 */
+        if (st.transparentColor) {
+          var imgD = tctx.getImageData(0, 0, st.width, st.height);
+          var px = imgD.data;
+          var tr = parseInt(st.transparentColor.slice(1, 3), 16);
+          var tg = parseInt(st.transparentColor.slice(3, 5), 16);
+          var tb = parseInt(st.transparentColor.slice(5, 7), 16);
+          for (var p = 0; p < px.length; p += 4) {
+            if (Math.abs(px[p] - tr) <= 4 && Math.abs(px[p + 1] - tg) <= 4 && Math.abs(px[p + 2] - tb) <= 4) {
+              px[p + 3] = 0;
+            }
+          }
+          tctx.putImageData(imgD, 0, 0);
+        }
+
+        pvCtx.drawImage(tmp, ps.x, ps.y);
+      }
+    }, 50);
+  }
+
+  function getPvXY(cx, cy) {
+    var r = pvCanvas.getBoundingClientRect();
+    return {
+      x: (cx - r.left) * (pvCanvas.width / r.width),
+      y: (cy - r.top) * (pvCanvas.height / r.height)
+    };
+  }
+
+  function onPvDown(cx, cy) {
+    var pt = getPvXY(cx, cy);
+    for (var i = placedStamps.length - 1; i >= 0; i--) {
+      var ps = placedStamps[i];
+      if (pt.x >= ps.x && pt.x <= ps.x + ps.stamp.width && pt.y >= ps.y && pt.y <= ps.y + ps.stamp.height) {
+        draggingPlacedIdx = i;
+        dragOffsetX = pt.x - ps.x;
+        dragOffsetY = pt.y - ps.y;
+        return;
+      }
+    }
+  }
+
+  function onPvMove(cx, cy) {
+    if (draggingPlacedIdx < 0) return;
+    var pt = getPvXY(cx, cy);
+    placedStamps[draggingPlacedIdx].x = pt.x - dragOffsetX;
+    placedStamps[draggingPlacedIdx].y = pt.y - dragOffsetY;
+  }
+
+  function onPvUp() {
+    draggingPlacedIdx = -1;
+  }
+
+  pvCanvas.addEventListener("mousedown", function(e) { onPvDown(e.clientX, e.clientY); });
+  window.addEventListener("mousemove", function(e) { onPvMove(e.clientX, e.clientY); });
+  window.addEventListener("mouseup", onPvUp);
+
+  pvCanvas.addEventListener("touchstart", function(e) {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      onPvDown(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+  pvCanvas.addEventListener("touchmove", function(e) {
+    if (draggingPlacedIdx >= 0 && e.touches.length === 1) {
+      e.preventDefault();
+      onPvMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+  pvCanvas.addEventListener("touchend", onPvUp);
 
   window.addEventListener("resize", function() {
     checkPortraitOverlay();
