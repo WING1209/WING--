@@ -132,49 +132,150 @@ body.drawing-mode .mode-switch-bar {
   cursor: default;
 }
 
-/* タイトル画面 */
+/* タイトル画面（ポップ＆クール仕様） */
 #screen-title {
   cursor: pointer;
+  background: radial-gradient(circle at center, #2f3542 0%, #1e272e 100%);
+  position: relative;
+  overflow: hidden;
 }
-.pop-title {
-  font-size: 32px;
+#screen-title::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 222, 89, 0.07) 0px,
+    rgba(255, 222, 89, 0.07) 20px,
+    transparent 20px,
+    transparent 40px
+  );
+  animation: bgSlide 15s linear infinite;
+  pointer-events: none;
+}
+@keyframes bgSlide {
+  from { transform: translate(0, 0); }
+  to { transform: translate(56px, 56px); }
+}
+.title-deco {
+  position: absolute;
   font-weight: 900;
-  color: #ff3838;
+  pointer-events: none;
+  opacity: 0.25;
+  animation: floatDeco 4s ease-in-out infinite alternate;
+}
+.deco-1 { top: 12%; left: 10%; font-size: 48px; color: #ffde59; transform: rotate(-15deg); }
+.deco-2 { bottom: 18%; left: 14%; font-size: 36px; color: #1e90ff; animation-delay: 1s; }
+.deco-3 { top: 18%; right: 12%; font-size: 42px; color: #ff4757; transform: rotate(20deg); animation-delay: 0.5s; }
+.deco-4 { bottom: 15%; right: 15%; font-size: 52px; color: #2ed573; animation-delay: 1.5s; }
+
+@keyframes floatDeco {
+  from { transform: translateY(0px) rotate(-10deg) scale(1); }
+  to { transform: translateY(-15px) rotate(10deg) scale(1.1); }
+}
+
+.title-logo-wrap {
+  position: relative;
+  z-index: 10;
   text-align: center;
-  line-height: 1.2;
-  text-shadow: 2px 2px 0 #ffffff, -2px 2px 0 #ffffff, 0 5px 0 #222222;
+  transform: rotate(-3deg);
+  animation: logoPop 2.5s ease-in-out infinite alternate;
 }
-.pop-title.sub {
-  color: #1e90ff;
+@keyframes logoPop {
+  from { transform: rotate(-3deg) scale(1); }
+  to { transform: rotate(-1.5deg) scale(1.03); }
 }
-.blink-start {
-  margin-top: 20px;
-  background: #222222;
+
+.title-top-tag {
+  display: inline-block;
+  background: #ffde59;
+  color: #111111;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 2px solid #111111;
+  box-shadow: 0 3px 0 #111111;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.pop-title {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: 1.1;
   color: #ffffff;
+  text-shadow:
+    -3px -3px 0 #111111,
+     3px -3px 0 #111111,
+    -3px  3px 0 #111111,
+     3px  3px 0 #111111,
+     0px  7px 0 #ff4757,
+     0px 11px 0 #111111;
+}
+.pop-title .accent-wing {
+  color: #ffde59;
+  font-size: 52px;
+  display: inline-block;
+  margin-right: 4px;
+}
+.pop-title .sub-pv {
+  display: inline-block;
+  background: #1e90ff;
+  color: #ffffff;
+  font-size: 26px;
+  padding: 2px 14px;
+  border-radius: 12px;
+  border: 3px solid #111111;
+  box-shadow: 0 5px 0 #111111;
+  text-shadow: 2px 2px 0 #111111;
+  margin-top: 6px;
+  transform: rotate(2deg);
+}
+
+.blink-start {
+  position: relative;
+  z-index: 10;
+  margin-top: 28px;
+  background: linear-gradient(135deg, #2ed573 0%, #1eae60 100%);
+  color: #111111;
   border: 3px solid #ffffff;
-  border-radius: 30px;
-  padding: 8px 24px;
+  border-radius: 40px;
+  padding: 10px 34px;
   font-size: 18px;
-  font-weight: bold;
-  animation: startBlink 0.9s infinite alternate;
+  font-weight: 900;
+  letter-spacing: 2px;
+  box-shadow: 0 0 0 3px #111111, 0 6px 0 #111111, 0 10px 20px rgba(46, 213, 115, 0.4);
+  animation: pulseStart 1.1s infinite alternate;
+  transition: transform 0.1s;
 }
-@keyframes startBlink {
-  from { opacity: 1; }
-  to { opacity: 0.3; }
+.blink-start:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 3px #111111, 0 2px 0 #111111;
 }
+@keyframes pulseStart {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.06); filter: brightness(1.1); }
+}
+
 .version-badge {
   position: fixed;
   bottom: 10px;
   right: 12px;
-  background: #ffffff;
-  color: #222222;
-  border: 2px solid #222222;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  color: #ffde59;
+  border: 2px solid #ffde59;
   border-radius: 12px;
   padding: 3px 10px;
   font-size: 11px;
   font-weight: bold;
-  box-shadow: 0 2px 0 #222222;
   pointer-events: none;
+  z-index: 10;
 }
 
 /* カード枠 */
@@ -208,7 +309,8 @@ body.drawing-mode .mode-switch-bar {
   margin: 10px 0;
   color: #ff3838;
 }
-.pass-input, .count-select {
+.pass-input,
+.count-select {
   font-size: 15px;
   font-weight: bold;
   padding: 6px 10px;
@@ -336,7 +438,6 @@ body.is-pc #trans-palette-grid {
   background: transparent;
   pointer-events: auto;
 }
-/* 履歴ON時は直前の1コマを半透明表示 */
 #trace-overlay-canvas {
   z-index: 8;
   display: none;
@@ -345,8 +446,8 @@ body.is-pc #trans-palette-grid {
   display: block;
 }
 #grid-overlay-canvas {
-  z-index: 6;
   display: none;
+  z-index: 6;
 }
 .canvas-tag {
   position: absolute;
@@ -475,7 +576,7 @@ body.is-pc #side-gui {
   pointer-events: none;
 }
 
-/* プレビュー&点線サイズ調整枠(市松模様で透過を可視化) */
+/* プレビュー&点線サイズ調整枠 */
 .preview-box-wrap {
   position: relative;
   display: inline-block;
@@ -581,7 +682,7 @@ body.is-pc #side-gui {
   text-align: left;
 }
 
-/* PV合体編集画面(スマホ縦画面3枠・段間隙間0・下部のみ約1cm余白) */
+/* PV合体編集画面 */
 #screen-pv {
   flex-direction: row;
   justify-content: space-between;
@@ -631,7 +732,7 @@ body.is-pc #side-gui {
   max-width: 92%;
   background: #ffffff;
   border: 3px solid #222222;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
   margin-top: 24px;
 }
 #pv-side {
@@ -723,7 +824,6 @@ body.is-pc #side-gui {
 </style>
 </head>
 <body>
-
 <!-- スマホ縦画面警告 -->
 <div id="portrait-overlay">
   <div class="rotate-mark">↻</div>
@@ -738,10 +838,25 @@ body.is-pc #side-gui {
   <button type="button" class="switch-btn" id="sw-pc" onclick="applyDevice('pc')">PC</button>
 </div>
 
+<!-- 共通セーブファイル選択インプット(.json) -->
+<input type="file" id="project-file-input" accept=".json,application/json" style="display:none;" onchange="loadProjectFromFile(this.files[0])">
+
 <!-- 1. タイトル画面 -->
 <div id="screen-title" class="screen active">
-  <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
-  <div class="blink-start" id="btn-title-start">スタート</div>
+  <div class="title-deco deco-1">★</div>
+  <div class="title-deco deco-2">♪</div>
+  <div class="title-deco deco-3">✎</div>
+  <div class="title-deco deco-4">✦</div>
+
+  <div class="title-logo-wrap">
+    <div class="title-top-tag">ANIMATION &amp; MOVIE MAKER</div>
+    <div class="pop-title">
+      <span class="accent-wing">WING</span>お絵描き<br>
+      <span class="sub-pv">PV CREATOR</span>
+    </div>
+  </div>
+
+  <div class="blink-start" id="btn-title-start">▶ TAP TO START</div>
   <div class="version-badge" id="app-version-badge">Ver 1.6.0</div>
 </div>
 
@@ -752,9 +867,10 @@ body.is-pc #side-gui {
     <button type="button" class="pop-btn blue" onclick="chooseMode1('single')">① 一人で制作</button><br>
     <button type="button" class="pop-btn purple" onclick="chooseMode1('multi')">② マルチ (最大3人 PeerJS)</button><br>
     <button type="button" class="pop-btn orange" onclick="openSceneJoinScreen()">③ 動画合体 (シーン別)</button>
-    <div id="single-load-area" style="display:none; margin-top:8px; padding-top:8px; border-top:2px dashed #ccc;">
-      <div id="single-save-info" style="font-size:10px; color:#333; margin-bottom:4px;"></div>
-      <button type="button" class="pop-btn green" style="font-size:11px; padding:5px 12px;" onclick="loadSingleSaveData()">セーブデータから再開 (一人制作)</button>
+
+    <div id="single-load-area" style="display: none; margin-top:8px; padding-top:8px; border-top:2px dashed #ccc;">
+      <div style="font-size: 10px; color: #333; margin-bottom:4px;">端末に保存したセーブファイル(.json)から再開できます</div>
+      <button type="button" class="pop-btn green" style="font-size:11px; padding: 5px 12px;" onclick="document.getElementById('project-file-input').click()">📂 セーブファイルから再開</button>
     </div>
   </div>
 </div>
@@ -763,11 +879,11 @@ body.is-pc #side-gui {
 <div id="screen-multi-role" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">マルチプレイ (最大3人)</h2>
-    <div id="peer-net-status" style="font-size: 10px; color: #555; margin-bottom: 6px;">PeerJS区切り同期モード準備完了</div>
+    <div id="peer-net-status" style="font-size: 10px; color: #555; margin-bottom: 6px;">PeerJS 同期モード準備完了</div>
     <button type="button" class="pop-btn" onclick="showScreen('screen-host-count')">ホスト</button>
     <button type="button" class="pop-btn blue" onclick="showScreen('screen-guest-pass')">ゲスト</button>
     <br>
-    <button type="button" class="pop-btn gray" style="font-size:12px; padding: 5px 14px;" onclick="showScreen('screen-menu1')">もどる</button>
+    <button type="button" class="pop-btn gray" style="font-size: 12px; padding: 5px 14px;" onclick="showScreen('screen-menu1')">もどる</button>
   </div>
 </div>
 
@@ -795,7 +911,7 @@ body.is-pc #side-gui {
   </div>
 </div>
 
-<!-- 2-5. ゲスト:パス入力 -->
+<!-- 2-5. ゲスト: パス入力 -->
 <div id="screen-guest-pass" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">4桁パスを入力</h2>
@@ -806,7 +922,7 @@ body.is-pc #side-gui {
   </div>
 </div>
 
-<!-- 2-6. ゲスト:待機画面 -->
+<!-- 2-6. ゲスト: 待機画面 -->
 <div id="screen-guest-wait" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">待機中</h2>
@@ -823,11 +939,13 @@ body.is-pc #side-gui {
     <button type="button" class="pop-btn" onclick="chooseGameMode('anim')">(1) アニメーション素材 (最大10枚)</button><br>
     <button type="button" class="pop-btn blue" onclick="chooseGameMode('bg')">(2) 背景 (最大3枚横長・最大3個登録)</button><br>
     <button type="button" class="pop-btn purple" onclick="openPvModeSelect()">(3) PV (合体)</button><br>
-    <div id="menu2-single-save-row" style="display:none; margin-top:4px;">
-      <button type="button" class="pop-btn green" style="font-size:11px; padding:4px 12px;" onclick="saveSingleProjectData()">途中セーブ (一人制作)</button>
-      <button type="button" class="pop-btn orange" id="btn-menu2-load" style="font-size:11px; padding:4px 12px; display:none;" onclick="loadSingleSaveData()">セーブ読込</button>
+
+    <div id="menu2-single-save-row" style="display: none; margin-top:6px;">
+      <button type="button" class="pop-btn green" style="font-size:11px; padding: 4px 12px;" onclick="saveProjectToFile()">💾 本体にセーブ保存</button>
+      <button type="button" class="pop-btn orange" style="font-size: 11px; padding: 4px 12px;" onclick="document.getElementById('project-file-input').click()">📂 ファイル読込</button>
     </div>
-    <button type="button" class="pop-btn gray" style="font-size:11px; padding: 4px 12px;" onclick="showScreen('screen-menu1')">モード選択へもどる</button>
+
+    <button type="button" class="pop-btn gray" style="font-size: 11px; padding: 4px 12px;" onclick="showScreen('screen-menu1')">モード選択へもどる</button>
   </div>
 </div>
 
@@ -839,13 +957,13 @@ body.is-pc #side-gui {
         <div class="trans-top-title">透明色(背景色)を選択</div>
         <div class="trans-top-note">選んだ色がスタンプの背景色になり、出力・PV合体時に透過されます(選択色はパレットで選択不可)</div>
       </div>
-      <button type="button" class="pop-btn gray" style="font-size:11px; padding: 4px 10px; margin:0;" onclick="showScreen('screen-menu2')">もどる</button>
+      <button type="button" class="pop-btn gray" style="font-size: 11px; padding: 4px 10px; margin:0;" onclick="showScreen('screen-menu2')">もどる</button>
     </div>
     <div id="trans-palette-grid"></div>
   </div>
 </div>
 
-<!-- 4-2.透明色確認ダイアログ -->
+<!-- 4-2. 透明色確認ダイアログ -->
 <div id="modal-trans-confirm" class="modal-bg">
   <div class="panel-card">
     <div style="font-size:13px; font-weight: bold;">この色を透明色(スタンプ背景色)に指定しますか?</div>
@@ -870,13 +988,13 @@ body.is-pc #side-gui {
   <div id="side-gui">
     <div class="tool-btns">
       <button type="button" class="t-btn selected" id="btn-tool-pen" onclick="selectTool('pen')">
-        ペン<span class="t-sub" id="lbl-pen">4px</span>
+        ペン <span class="t-sub" id="lbl-pen">4px</span>
       </button>
       <button type="button" class="t-btn" id="btn-tool-eraser" onclick="selectTool('eraser')">
         消しゴム<span class="t-sub" id="lbl-eraser">10px</span>
       </button>
       <button type="button" class="t-btn" id="btn-tool-fill" onclick="selectTool('fill')">
-        塗つぶし<span class="t-sub" id="lbl-fill">標準</span>
+        塗つぶし <span class="t-sub" id="lbl-fill">標準</span>
       </button>
       <button type="button" class="t-btn" id="btn-tool-grid" onclick="toggleGrid()">
         グリッド<span class="t-sub">60×60</span>
@@ -885,10 +1003,10 @@ body.is-pc #side-gui {
         履歴<span class="t-sub" id="lbl-trace">OFF</span>
       </button>
       <button type="button" class="t-btn" onclick="doUndo()">
-        ←<span class="t-sub">戻す</span>
+        ↩<span class="t-sub">戻す</span>
       </button>
       <button type="button" class="t-btn" onclick="doRedo()">
-        →<span class="t-sub">次動作</span>
+        ↪<span class="t-sub">次動作</span>
       </button>
       <button type="button" class="t-btn" onclick="savePNG()">
         保存<span class="t-sub">PNG</span>
@@ -896,8 +1014,8 @@ body.is-pc #side-gui {
       <button type="button" class="t-btn" id="btn-next-page" onclick="goNextFrame()">
         次へ<span class="t-sub" id="lbl-next-limit">最大10枚</span>
       </button>
-      <button type="button" class="t-btn" id="btn-single-save" style="display:none; background:#70a1ff; color:#fff; grid-column: span 3;" onclick="saveSingleProjectData()">
-        セーブ (一人制作の途中保存)
+      <button type="button" class="t-btn" id="btn-single-save" style="display: none; background:#70a1ff; color:#fff; grid-column: span 3;" onclick="saveProjectToFile()">
+        💾 セーブ(本体へファイル保存)
       </button>
       <button type="button" class="t-btn" id="btn-draw-done" style="background: #2ed573; grid-column: span 3;" onclick="onDrawDoneClicked()">
         完了(プレビューへ)
@@ -911,7 +1029,7 @@ body.is-pc #side-gui {
 <!-- 6. プレビュー画面 -->
 <div id="modal-preview" class="modal-bg">
   <div class="panel-card">
-    <div style="font-size:13px; font-weight:bold; margin-bottom:4px;" id="preview-modal-title">プレビュー</div>
+    <div style="font-size: 13px; font-weight:bold; margin-bottom:4px;" id="preview-modal-title">プレビュー</div>
     <div class="preview-box-wrap" id="preview-crop-area">
       <canvas id="preview-stage" width="480" height="300"></canvas>
       <div id="crop-dashed-rect"></div>
@@ -942,7 +1060,7 @@ body.is-pc #side-gui {
       <button type="button" class="pop-btn orange" id="btn-pv-crop" style="padding: 5px 10px; font-size:11px;" onclick="startCropSizeMode()">サイズ調整</button>
       <button type="button" class="pop-btn purple" id="btn-pv-stamp" style="padding: 5px 10px; font-size:11px;" onclick="registerStamp()">スタンプ登録</button>
       <button type="button" class="pop-btn blue" id="btn-pv-bg-reg" style="display: none; padding: 5px 10px; font-size:11px;" onclick="registerBackgroundAsset()">背景登録(最大3個)</button>
-      <button type="button" class="pop-btn orange" id="btn-pv-gif" style="display: none; padding: 5px 10px; font-size:11px;" onclick="saveBackgroundGIF()">GIF保存</button>
+      <button type="button" class="pop-btn orange" id="btn-pv-gif" style="display: none; padding: 5px 10px; font-size:11px;" onclick="saveBackgroundGIF()">GIF 保存</button>
       <button type="button" class="pop-btn green" id="btn-pv-save" style="padding: 5px 10px; font-size:11px;" onclick="savePreviewAsset()">PNG 保存</button>
       <button type="button" class="pop-btn" id="btn-pv-complete" style="padding: 5px 10px; font-size:11px;" onclick="onPreviewCompleteClicked()">完了</button>
       <button type="button" class="pop-btn gray" style="padding: 5px 10px; font-size:11px;" onclick="closeAnimPreview()">もどる</button>
@@ -958,7 +1076,7 @@ body.is-pc #side-gui {
       「スタンプ登録」を押さずに完了すると、今回のスタンプはPV画面で使えません。<br>このまま終了しますか?
     </div>
     <button type="button" class="pop-btn green" style="padding:6px 14px; font-size:12px;" onclick="closeUnsavedWarnAndRegister()">登録しにもどる</button>
-    <button type="button" class="pop-btn gray" style="padding:6px 14px; font-size:12px;" onclick="forceCompletePreviewSession()">そのまま完了</button>
+    <button type="button" class="pop-btn gray" style="padding: 6px 14px; font-size:12px;" onclick="forceCompletePreviewSession()">そのまま完了</button>
   </div>
 </div>
 
@@ -967,11 +1085,11 @@ body.is-pc #side-gui {
   <div class="panel-card">
     <h2 class="panel-heading">(3) PV (合体) モード選択</h2>
     <button type="button" class="pop-btn orange" onclick="openPokeSetup()">① ポケカラ用(縦3枠)</button><br>
-    <button type="button" class="pop-btn gray" style="font-size:12px; padding: 5px 14px;" onclick="showScreen('screen-menu2')">もどる</button>
+    <button type="button" class="pop-btn gray" style="font-size: 12px; padding: 5px 14px;" onclick="showScreen('screen-menu2')">もどる</button>
   </div>
 </div>
 
-<!-- 7-1. ①ポケカラ用 (縦3枠)上段・中段・下段割り当て設定(「なし」選択可) -->
+<!-- 7-1. ①ポケカラ用 (縦3枠)上段 中段・下段割り当て設定 -->
 <div id="screen-poke-setup" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">ポケカラ用 (縦3枠) 背景割り当て</h2>
@@ -1043,7 +1161,7 @@ body.is-pc #side-gui {
   <div id="pv-stage-wrap">
     <div id="pv-top-hud">
       <div class="hud-badge" id="pv-timer-badge">残り 01:00</div>
-      <div class="hud-badge" id="pv-target-badge">対象: 上段/ 1枚目</div>
+      <div class="hud-badge" id="pv-target-badge">対象: 上段/1枚目</div>
       <button type="button" class="mini-pill" style="pointer-events: auto;" onclick="finishPvEditingRound()">時間終了・合体へ</button>
     </div>
     <canvas id="pv-canvas" width="360" height="640"></canvas>
@@ -1063,7 +1181,7 @@ body.is-pc #side-gui {
     <div style="font-size:11px; font-weight:bold; text-align:center;">共有スタンプ (最大10種)</div>
     <div id="stamp-list"></div>
     <div class="option-row" style="margin: 2px 0;">
-      <span>サイズ: </span>
+      <span>サイズ:</span>
       <button type="button" class="mini-pill" onclick="changeSelectedStampScale(-0.15)">-</button>
       <span id="pv-stamp-scale-lbl">100%</span>
       <button type="button" class="mini-pill" onclick="changeSelectedStampScale(0.15)">+</button>
@@ -1090,7 +1208,7 @@ body.is-pc #side-gui {
         シーン動画がまだありません。「+シーン動画を追加」から選択してください。
       </div>
     </div>
-    <div id="scene-join-status" style="font-size:11px; font-weight:bold; color:#1e90ff; min-height:18px; margin-bottom:4px;"></div>
+    <div id="scene-join-status" style="font-size:11px; font-weight:bold; color:#1e90ff; min-height: 18px; margin-bottom:4px;"></div>
     <div>
       <button type="button" class="pop-btn green" id="btn-scene-join-run" onclick="runSceneJoinExport()">シーンを順番につないで出力</button>
       <button type="button" class="pop-btn gray" id="btn-scene-join-back" onclick="showScreen('screen-menu1')">もどる</button>
@@ -1103,18 +1221,16 @@ body.is-pc #side-gui {
   <div class="panel-card" style="max-width: 460px;">
     <div style="font-size:14px; font-weight:bold; margin-bottom:4px;">合体アニメーションプレビュー</div>
     <canvas id="pv-result-canvas" width="270" height="480" style="border: 3px solid #222; background:#fff; max-height: 42vh; width:auto;"></canvas>
-    <div id="pv-playback-duration-row" style="font-size:11px; font-weight:bold; margin:4px 0; background:#f8f9fa; border:2px solid #222; border-radius:8px; padding:4px 8px;">
+    <div id="pv-playback-duration-row" style="font-size: 11px; font-weight:bold; margin: 4px 0; background:#f8f9fa; border:2px solid #222; border-radius:8px; padding: 4px 8px;">
       再生時間設定: <span id="pv-play-sec-val">5</span>秒
       <input type="range" id="pv-play-sec-range" min="2" max="30" step="1" value="5" style="width:120px; vertical-align:middle;" oninput="changePvPlaybackDuration(this.value)">
       <span id="pv-play-elapsed-lbl" style="margin-left:6px; color:#1e90ff;">0.0s / 5.0s</span>
     </div>
-    <!-- ゲスト向け: 追加または終了 -->
     <div id="pv-guest-choice-box" style="display: none; margin-top:6px;">
       <div style="font-size:12px; font-weight:bold; margin-bottom:4px;">編集を追加しますか? 終了しますか?</div>
       <button type="button" class="pop-btn blue" onclick="guestChooseAdd()">追加</button>
       <button type="button" class="pop-btn gray" onclick="guestChooseEnd()">終了</button>
     </div>
-    <!-- ゲストが「追加」を押したときの希望時間選択 -->
     <div id="pv-guest-add-time-box" style="display: none; margin-top:6px;">
       <div style="font-size:12px; font-weight: bold; margin-bottom:4px;">希望する追加制限時間を選択 (1~5分)</div>
       <select id="select-guest-add-min" class="count-select">
@@ -1126,15 +1242,13 @@ body.is-pc #side-gui {
       </select>
       <button type="button" class="pop-btn green" onclick="submitGuestAddRequest()">決定してホストへ送信</button>
     </div>
-    <!-- ホスト/一人モード向け: 希望結果確認&追加または保存 -->
     <div id="pv-host-decision-box" style="display: none; margin-top:6px;">
       <div id="pv-host-requests-summary" style="font-size:11px; background:#f1f2f6; border: 2px solid #222; border-radius: 8px; padding:6px; margin-bottom: 6px; text-align:left;"></div>
       <button type="button" class="pop-btn orange" onclick="hostChooseAddMore()">追加</button>
       <button type="button" class="pop-btn green" id="btn-record-mp4" onclick="hostChooseSaveMp4()">保存(MP4録画)</button>
     </div>
-    <!-- 保存完了後:各自保存先選択&タイトル戻り -->
     <div id="pv-final-save-box" style="display: none; margin-top:6px;">
-      <div id="pv-mp4-status" style="font-size:12px; font-weight:bold; color:#1e90ff; margin-bottom: 6px;"></div>
+      <div id="pv-mp4-status" style="font-size: 12px; font-weight:bold; color:#1e90ff; margin-bottom: 6px;"></div>
       <button type="button" class="pop-btn green" onclick="chooseSaveLocationAndReturn()">保存先を選んで保存 (タイトルへ)</button>
       <button type="button" class="pop-btn gray" onclick="returnToTitleImmediately()">終了 (タイトルへ)</button>
     </div>
@@ -1153,13 +1267,10 @@ body.is-pc #side-gui {
 <script>
 (function() {
   "use strict";
-
   var APP_VERSION = "Ver 1.6.0";
   document.getElementById("app-version-badge").textContent = APP_VERSION;
 
-  var SINGLE_SAVE_KEY = "wing_pv_single_save_v1";
-
-  /* カラーパレット (250色)生成 */
+  /* カラーパレット (250色) 生成 */
   var colors250 = [];
   for (var g = 0; g < 10; g++) {
     var v = Math.round((255 / 9) * g);
@@ -1191,7 +1302,6 @@ body.is-pc #side-gui {
     else if (h < 240) { gr = x; b = c; }
     else if (h < 300) { r = x; b = c; }
     else { r = c; b = x; }
-
     function to2(n) {
       var hx = Math.round((n + m) * 255).toString(16);
       return hx.length < 2 ? "0" + hx : hx;
@@ -1208,7 +1318,7 @@ body.is-pc #side-gui {
     };
   }
 
-  /* セッション保持データ & PeerJS区切り同期 */
+  /* セッション保持データ & PeerJS 同期 */
   var MAX_STAMPS = 10;
   var MAX_BG_ASSETS = 3;
   var registeredStamps = [];
@@ -1253,64 +1363,45 @@ body.is-pc #side-gui {
   function syncSingleSaveButtons() {
     var single = isSingleMode();
     var drawSaveBtn = document.getElementById("btn-single-save");
-    if (drawSaveBtn) {
-      drawSaveBtn.style.display = single ? "block" : "none";
-    }
+    if (drawSaveBtn) drawSaveBtn.style.display = single ? "block" : "none";
+
     var menu2Row = document.getElementById("menu2-single-save-row");
-    var menu2LoadBtn = document.getElementById("btn-menu2-load");
-    if (menu2Row) {
-      menu2Row.style.display = single ? "block" : "none";
-    }
-    if (menu2LoadBtn) {
-      menu2LoadBtn.style.display = (single && hasSingleSaveData()) ? "inline-block" : "none";
-    }
-    refreshSingleLoadUI();
+    if (menu2Row) menu2Row.style.display = single ? "block" : "none";
+
+    var menu1LoadArea = document.getElementById("single-load-area");
+    if (menu1LoadArea) menu1LoadArea.style.display = single ? "block" : "none";
   }
 
-  function hasSingleSaveData() {
-    try {
-      return !!localStorage.getItem(SINGLE_SAVE_KEY);
-    } catch (e) {
-      return false;
-    }
+  /* ImageDataを軽量PNG文字列(DataURL)に変換 */
+  function imageDataToDataURL(fd) {
+    var c = document.createElement("canvas");
+    c.width = fd.width;
+    c.height = fd.height;
+    c.getContext("2d").putImageData(fd, 0, 0);
+    return c.toDataURL("image/png");
   }
 
-  function refreshSingleLoadUI() {
-    var area = document.getElementById("single-load-area");
-    var info = document.getElementById("single-save-info");
-    if (!area || !info) return;
-    if (!isSingleMode()) {
-      area.style.display = "none";
-      return;
-    }
-    try {
-      var raw = localStorage.getItem(SINGLE_SAVE_KEY);
-      if (!raw) {
-        area.style.display = "none";
-        return;
-      }
-      var parsed = JSON.parse(raw);
-      area.style.display = "block";
-      info.textContent = "保存日時: " + (parsed.savedAt || "不明") + " / スタンプ:" + (parsed.stamps ? parsed.stamps.length : 0) + "個 / 背景:" + (parsed.bgs ? parsed.bgs.length : 0) + "個";
-    } catch (e) {
-      area.style.display = "none";
-    }
+  /* PNG文字列(DataURL)をImageDataに復元 */
+  function dataURLToImageData(url, w, h) {
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.onload = function() {
+        var c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        var ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(ctx.getImageData(0, 0, w, h));
+      };
+      img.onerror = function() {
+        resolve(new ImageData(w, h));
+      };
+      img.src = url;
+    });
   }
 
-  function serializeImageData(fd) {
-    return {
-      width: fd.width,
-      height: fd.height,
-      data: Array.from(fd.data)
-    };
-  }
-
-  function deserializeImageData(obj) {
-    return new ImageData(new Uint8ClampedArray(obj.data), obj.width, obj.height);
-  }
-
-  /* 一人制作時のみセーブ */
-  window.saveSingleProjectData = function() {
+  /* 一人制作時: 本体(スマホ/PC)へセーブファイルをダウンロード保存 */
+  window.saveProjectToFile = function() {
     if (!isSingleMode()) {
       alert("セーブ機能は「一人で制作」時のみ利用できます。");
       return;
@@ -1320,6 +1411,7 @@ body.is-pc #side-gui {
         state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
       }
       var payload = {
+        app: "WING_PV",
         savedAt: new Date().toLocaleString("ja-JP"),
         activeScreenId: getCurrentActiveScreenId(),
         state: {
@@ -1339,7 +1431,7 @@ body.is-pc #side-gui {
           bgCondition: state.bgCondition,
           bgDirection: state.bgDirection
         },
-        frames: (state.frames || []).map(serializeImageData),
+        frames: (state.frames || []).map(imageDataToDataURL),
         stamps: registeredStamps.map(function(st) {
           return {
             id: st.id,
@@ -1350,7 +1442,7 @@ body.is-pc #side-gui {
             speed: st.speed,
             scale: st.scale || 1.0,
             transparentColor: st.transparentColor,
-            frames: (st.frames || []).map(serializeImageData)
+            frames: (st.frames || []).map(imageDataToDataURL)
           };
         }),
         bgs: bgAssets.map(function(bg) {
@@ -1362,7 +1454,7 @@ body.is-pc #side-gui {
             frameCount: bg.frameCount,
             speed: bg.speed,
             direction: bg.direction,
-            frames: (bg.frames || []).map(serializeImageData)
+            frames: (bg.frames || []).map(imageDataToDataURL)
           };
         }),
         poke: {
@@ -1378,140 +1470,166 @@ body.is-pc #side-gui {
         pvPlaybackSec: pvPlaybackSec
       };
 
-      localStorage.setItem(SINGLE_SAVE_KEY, JSON.stringify(payload));
-      refreshSingleLoadUI();
-      syncSingleSaveButtons();
-      alert("一人制作データをセーブしました! (" + payload.savedAt + ")");
+      var jsonStr = JSON.stringify(payload);
+      var blob = new Blob([jsonStr], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var ymd = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      a.download = "wing_pv_save_" + ymd + ".json";
+      a.href = url;
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+      alert("本体にセーブファイルを保存しました! (" + payload.savedAt + ")");
     } catch (e) {
-      alert("セーブに失敗しました（ブラウザの保存容量上限の可能性があります）。");
+      alert("セーブファイルの作成に失敗しました: " + e.message);
     }
   };
 
-  /* 一人制作セーブデータの読込 */
-  window.loadSingleSaveData = function() {
-    if (!isSingleMode()) {
-      alert("セーブ読込は「一人で制作」時のみ利用できます。");
-      return;
-    }
-    try {
-      var raw = localStorage.getItem(SINGLE_SAVE_KEY);
-      if (!raw) {
-        alert("セーブデータが見つかりません。");
-        return;
-      }
-      var data = JSON.parse(raw);
+  /* 一人制作時: 本体のセーブファイル(.json)を読み込み */
+  window.loadProjectFromFile = function(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        if (!data || data.app !== "WING_PV") {
+          alert("WINGお絵描きPVのセーブファイルではありません。");
+          return;
+        }
+        state.playMode = "single";
+        state.role = "host";
+        state.myPlayerId = 1;
 
-      state.playMode = "single";
-      state.role = "host";
-      state.myPlayerId = 1;
+        var cw = (data.state && data.state.canvasW) || 480;
+        var ch = (data.state && data.state.canvasH) || 300;
 
-      if (data.state) {
-        state.gameMode = data.state.gameMode || "anim";
-        state.transparentColor = data.state.transparentColor || null;
-        state.drawColor = data.state.drawColor || "#000000";
-        state.tool = data.state.tool || "pen";
-        state.penSize = data.state.penSize || 4;
-        state.eraserSize = data.state.eraserSize || 10;
-        state.fillTol = data.state.fillTol || 25;
-        state.gridOn = !!data.state.gridOn;
-        state.traceOn = !!data.state.traceOn;
-        state.frameIdx = data.state.frameIdx || 0;
-        state.bgCondition = data.state.bgCondition || "sequence";
-        state.bgDirection = data.state.bgDirection || "pos";
-      }
+        if (data.state) {
+          state.gameMode = data.state.gameMode || "anim";
+          state.transparentColor = data.state.transparentColor || null;
+          state.drawColor = data.state.drawColor || "#000000";
+          state.tool = data.state.tool || "pen";
+          state.penSize = data.state.penSize || 4;
+          state.eraserSize = data.state.eraserSize || 10;
+          state.fillTol = data.state.fillTol || 25;
+          state.gridOn = !!data.state.gridOn;
+          state.traceOn = !!data.state.traceOn;
+          state.frameIdx = data.state.frameIdx || 0;
+          state.bgCondition = data.state.bgCondition || "sequence";
+          state.bgDirection = data.state.bgDirection || "pos";
+        }
 
-      registeredStamps = (data.stamps || []).map(function(st) {
-        return {
-          id: st.id,
-          name: st.name,
-          ownerPlayerId: st.ownerPlayerId || 1,
-          width: st.width,
-          height: st.height,
-          speed: st.speed || 200,
-          scale: st.scale || 1.0,
-          transparentColor: st.transparentColor || null,
-          frames: (st.frames || []).map(deserializeImageData)
-        };
-      });
-
-      bgAssets = (data.bgs || []).map(function(bg) {
-        var restoredFrames = (bg.frames || []).map(deserializeImageData);
-        var stripCan = buildHorizontalStripCanvas(restoredFrames, bg.unitWidth || 480, bg.unitHeight || 300, null);
-        return {
-          id: bg.id,
-          label: bg.label,
-          unitWidth: bg.unitWidth || 480,
-          unitHeight: bg.unitHeight || 300,
-          frameCount: bg.frameCount || restoredFrames.length,
-          speed: bg.speed || 200,
-          direction: bg.direction || "pos",
-          frames: restoredFrames,
-          stripCanvas: stripCan,
-          stripDataUrl: stripCan.toDataURL("image/png")
-        };
-      });
-
-      if (data.poke) {
-        pokeScrollOn = data.poke.scrollOn !== undefined ? !!data.poke.scrollOn : true;
-        pokeScrollSpeed = data.poke.scrollSpeed || 3;
-        pokeAxis = data.poke.axis || "h";
-        pokeDir = data.poke.dir || "left";
-        if (Array.isArray(data.poke.slotIndices)) {
-          pokeSlotsData = [0, 1, 2].map(function(i) {
-            var idx = data.poke.slotIndices[i];
-            return (idx >= 0 && bgAssets[idx]) ? bgAssets[idx] : null;
+        registeredStamps = [];
+        var rawStamps = data.stamps || [];
+        for (var sIdx = 0; sIdx < rawStamps.length; sIdx++) {
+          var st = rawStamps[sIdx];
+          var stFrames = [];
+          for (var sf = 0; sf < (st.frames || []).length; sf++) {
+            stFrames.push(await dataURLToImageData(st.frames[sf], st.width || cw, st.height || ch));
+          }
+          registeredStamps.push({
+            id: st.id,
+            name: st.name,
+            ownerPlayerId: st.ownerPlayerId || 1,
+            width: st.width || cw,
+            height: st.height || ch,
+            speed: st.speed || 200,
+            scale: st.scale || 1.0,
+            transparentColor: st.transparentColor || null,
+            frames: stFrames
           });
         }
-        var spRange = document.getElementById("poke-speed-range");
-        var spVal = document.getElementById("poke-speed-val");
-        if (spRange) spRange.value = String(pokeScrollSpeed);
-        if (spVal) spVal.textContent = String(pokeScrollSpeed);
+
+        bgAssets = [];
+        var rawBgs = data.bgs || [];
+        for (var bIdx = 0; bIdx < rawBgs.length; bIdx++) {
+          var bg = rawBgs[bIdx];
+          var uw = bg.unitWidth || 480;
+          var uh = bg.unitHeight || 300;
+          var bgFrames = [];
+          for (var bf = 0; bf < (bg.frames || []).length; bf++) {
+            bgFrames.push(await dataURLToImageData(bg.frames[bf], uw, uh));
+          }
+          var stripCan = buildHorizontalStripCanvas(bgFrames, uw, uh, null);
+          bgAssets.push({
+            id: bg.id,
+            label: bg.label,
+            unitWidth: uw,
+            unitHeight: uh,
+            frameCount: bg.frameCount || bgFrames.length,
+            speed: bg.speed || 200,
+            direction: bg.direction || "pos",
+            frames: bgFrames,
+            stripCanvas: stripCan,
+            stripDataUrl: stripCan.toDataURL("image/png")
+          });
+        }
+
+        if (data.poke) {
+          pokeScrollOn = data.poke.scrollOn !== undefined ? !!data.poke.scrollOn : true;
+          pokeScrollSpeed = data.poke.scrollSpeed || 3;
+          pokeAxis = data.poke.axis || "h";
+          pokeDir = data.poke.dir || "left";
+          if (Array.isArray(data.poke.slotIndices)) {
+            pokeSlotsData = [0, 1, 2].map(function(i) {
+              var idx = data.poke.slotIndices[i];
+              return (idx >= 0 && bgAssets[idx]) ? bgAssets[idx] : null;
+            });
+          }
+          var spRange = document.getElementById("poke-speed-range");
+          var spVal = document.getElementById("poke-speed-val");
+          if (spRange) spRange.value = String(pokeScrollSpeed);
+          if (spVal) spVal.textContent = String(pokeScrollSpeed);
+        }
+
+        if (data.pvPlaybackSec) {
+          window.changePvPlaybackDuration(data.pvPlaybackSec);
+        }
+
+        setCanvasDimensions(cw, ch);
+        if (data.frames && data.frames.length > 0) {
+          var restoredFrames = [];
+          for (var f = 0; f < data.frames.length; f++) {
+            restoredFrames.push(await dataURLToImageData(data.frames[f], cw, ch));
+          }
+          state.frames = restoredFrames;
+          state.frameIdx = Math.min(state.frameIdx, state.frames.length - 1);
+          pCtx.putImageData(state.frames[state.frameIdx], 0, 0);
+          state.undoList = [pCtx.getImageData(0, 0, cw, ch)];
+          state.redoList = [];
+        } else {
+          startPaintSession();
+        }
+
+        document.getElementById("lbl-pen").textContent = state.penSize + "px";
+        document.getElementById("lbl-eraser").textContent = state.eraserSize + "px";
+        var tolLabel = state.fillTol <= 5 ? "厳密" : (state.fillTol >= 60 ? "広め" : "標準");
+        document.getElementById("lbl-fill").textContent = tolLabel;
+        gCanvas.style.display = state.gridOn ? "block" : "none";
+        document.getElementById("btn-tool-grid").classList.toggle("selected", state.gridOn);
+        document.getElementById("btn-tool-trace").classList.toggle("selected", state.traceOn);
+        document.getElementById("lbl-trace").textContent = state.traceOn ? "ON" : "OFF";
+        tCanvas.classList.toggle("show", state.traceOn);
+
+        var maxF = getMaxFramesForMode();
+        document.getElementById("lbl-next-limit").textContent = "最大" + maxF + "枚";
+        refreshFrameLabel();
+        buildSidePalette();
+        renderTraceOverlay();
+        updateMenu2Status();
+        renderStampList();
+        syncSingleSaveButtons();
+
+        var targetScreen = (data.activeScreenId === "screen-draw" || data.activeScreenId === "screen-menu2")
+          ? data.activeScreenId
+          : "screen-menu2";
+        window.showScreen(targetScreen);
+        document.getElementById("project-file-input").value = "";
+        alert("セーブデータを読み込みました! (" + (data.savedAt || "") + ")");
+      } catch (err) {
+        alert("セーブデータの読み込みに失敗しました。");
       }
-
-      if (data.pvPlaybackSec) {
-        window.changePvPlaybackDuration(data.pvPlaybackSec);
-      }
-
-      setCanvasDimensions(
-        (data.state && data.state.canvasW) || 480,
-        (data.state && data.state.canvasH) || 300
-      );
-      if (data.frames && data.frames.length > 0) {
-        state.frames = data.frames.map(deserializeImageData);
-        state.frameIdx = Math.min(state.frameIdx, state.frames.length - 1);
-        pCtx.putImageData(state.frames[state.frameIdx], 0, 0);
-        state.undoList = [pCtx.getImageData(0, 0, state.canvasW, state.canvasH)];
-        state.redoList = [];
-      } else {
-        startPaintSession();
-      }
-
-      document.getElementById("lbl-pen").textContent = state.penSize + "px";
-      document.getElementById("lbl-eraser").textContent = state.eraserSize + "px";
-      var tolLabel = state.fillTol <= 5 ? "厳密" : (state.fillTol >= 60 ? "広め" : "標準");
-      document.getElementById("lbl-fill").textContent = tolLabel;
-      gCanvas.style.display = state.gridOn ? "block" : "none";
-      document.getElementById("btn-tool-grid").classList.toggle("selected", state.gridOn);
-      document.getElementById("btn-tool-trace").classList.toggle("selected", state.traceOn);
-      document.getElementById("lbl-trace").textContent = state.traceOn ? "ON" : "OFF";
-      tCanvas.classList.toggle("show", state.traceOn);
-
-      var maxF = getMaxFramesForMode();
-      document.getElementById("lbl-next-limit").textContent = "最大" + maxF + "枚";
-      refreshFrameLabel();
-      buildSidePalette();
-      renderTraceOverlay();
-      updateMenu2Status();
-      renderStampList();
-
-      var targetScreen = (data.activeScreenId === "screen-draw" || data.activeScreenId === "screen-menu2")
-        ? data.activeScreenId
-        : "screen-draw";
-      window.showScreen(targetScreen);
-      alert("セーブデータを読み込みました!");
-    } catch (e) {
-      alert("セーブデータの読み込みに失敗しました。");
-    }
+    };
+    reader.readAsText(file);
   };
 
   function getCurrentActiveScreenId() {
@@ -1607,7 +1725,7 @@ body.is-pc #side-gui {
         conn.on("data", handlePeerMessage);
       });
       peerInstance.on("error", function() {
-        document.getElementById("host-wait-label").textContent = "ローカル同期モード(" + peerConnectedCount + "/" + state.playerCount + "人)";
+        document.getElementById("host-wait-label").textContent = "ローカル同期モード (" + peerConnectedCount + "/" + state.playerCount + "人)";
       });
     } catch (e) {}
   }
@@ -1630,7 +1748,7 @@ body.is-pc #side-gui {
         conn.on("data", handlePeerMessage);
         setTimeout(function() {
           if (!conn.open) {
-            onDone("待機中(通信再試行/ローカル互換モード)");
+            onDone("待機中 (通信再試行/ローカル互換モード)");
           }
         }, 2500);
       });
@@ -1648,7 +1766,7 @@ body.is-pc #side-gui {
     });
   }
 
-  /* 透過色を適用したキャンバスを生成 (選択した透明色=背景色を確実に alpha=0 へ透過) */
+  /* 透過色を適用したキャンバスを生成 */
   function createTransparentFrameCanvas(imgData, transHex) {
     var c = document.createElement("canvas");
     c.width = imgData.width;
@@ -1673,7 +1791,7 @@ body.is-pc #side-gui {
     return c;
   }
 
-  /* 最大3枚のキャンバスを横長1枚絵(幅×枚数×高さ)に隙間0で連結 */
+  /* 最大3枚のキャンバスを横長1枚絵に隙間0で連結 */
   function buildHorizontalStripCanvas(framesArr, w, h, transHex) {
     var n = framesArr.length;
     var strip = document.createElement("canvas");
@@ -1682,13 +1800,15 @@ body.is-pc #side-gui {
     var sctx = strip.getContext("2d");
     sctx.clearRect(0, 0, strip.width, strip.height);
     for (var i = 0; i < n; i++) {
-      var fCan = transHex ? createTransparentFrameCanvas(framesArr[i], transHex) : (function() {
-        var tc = document.createElement("canvas");
-        tc.width = w;
-        tc.height = h;
-        tc.getContext("2d").putImageData(framesArr[i], 0, 0);
-        return tc;
-      })();
+      var fCan = transHex
+        ? createTransparentFrameCanvas(framesArr[i], transHex)
+        : (function() {
+            var tc = document.createElement("canvas");
+            tc.width = w;
+            tc.height = h;
+            tc.getContext("2d").putImageData(framesArr[i], 0, 0);
+            return tc;
+          })();
       sctx.drawImage(fCan, i * w, 0);
     }
     return strip;
@@ -1751,15 +1871,11 @@ body.is-pc #side-gui {
     var el = document.getElementById(id);
     if (el) el.classList.add("active");
 
-    if (id === "screen-menu1") {
-      refreshSingleLoadUI();
-    }
     if (id === "screen-menu2") {
       updateMenu2Status();
-      syncSingleSaveButtons();
     }
+    syncSingleSaveButtons();
     if (id === "screen-draw") {
-      syncSingleSaveButtons();
       setTimeout(fitDrawCanvas, 20);
     }
     checkPortraitOverlay();
@@ -1864,7 +1980,7 @@ body.is-pc #side-gui {
     }
   };
 
-  /* お絵描き・GUI (履歴ON時は直前の1コマのみを一番前に半透明表示) */
+  /* お絵描き・GUI */
   var pCanvas = document.getElementById("paint-canvas");
   var pCtx = pCanvas.getContext("2d");
   var tCanvas = document.getElementById("trace-overlay-canvas");
@@ -1904,7 +2020,6 @@ body.is-pc #side-gui {
     document.getElementById("btn-tool-trace").classList.remove("selected");
     document.getElementById("lbl-trace").textContent = "OFF";
     tCanvas.classList.remove("show");
-
     setCanvasDimensions(480, 300);
     clearCanvasWithBaseBg(pCtx, state.canvasW, state.canvasH);
     var initImg = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
@@ -1921,7 +2036,6 @@ body.is-pc #side-gui {
     fitDrawCanvas();
   }
 
-  /* 修正箇所①: アニメーションでも背景でも履歴ボタンを使用可能にする */
   window.toggleTraceMode = function() {
     state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     state.traceOn = !state.traceOn;
@@ -1931,18 +2045,14 @@ body.is-pc #side-gui {
     renderTraceOverlay();
   };
 
-  /* 修正箇所①: 1つ前に描かれた絵 (frameIdx - 1) のみを半透明表示 */
   function renderTraceOverlay() {
     tCtx.clearRect(0, 0, state.canvasW, state.canvasH);
     if (!state.traceOn || state.frameIdx <= 0) return;
-
     var prevIdx = state.frameIdx - 1;
     var fd = state.frames[prevIdx];
     if (!fd) return;
-
     var baseHex = getEditorBaseBgHex();
     var baseRgb = hexToRgb(baseHex);
-
     var tmpCan = document.createElement("canvas");
     tmpCan.width = fd.width;
     tmpCan.height = fd.height;
@@ -1960,9 +2070,9 @@ body.is-pc #side-gui {
         px[p + 3] = 0;
       }
     }
+    tCtx.globalAlpha = 0.35;
     tmpCtx.putImageData(copy, 0, 0);
     tCtx.save();
-    tCtx.globalAlpha = 0.35;
     tCtx.drawImage(tmpCan, 0, 0);
     tCtx.restore();
   }
@@ -1985,17 +2095,17 @@ body.is-pc #side-gui {
         chip.style.backgroundColor = hex;
         if (hex === state.transparentColor) {
           chip.className += " blocked-chip";
-        } else {
-          if (hex === state.drawColor) chip.className += " active-chip";
-          chip.onclick = function() {
-            state.drawColor = hex;
-            var all = box.querySelectorAll(".p-chip");
-            for (var j = 0; j < all.length; j++) {
-              all[j].classList.remove("active-chip");
-            }
-            chip.classList.add("active-chip");
-          };
+        } else if (hex === state.drawColor) {
+          chip.className += " active-chip";
         }
+        chip.onclick = function() {
+          state.drawColor = hex;
+          var all = box.querySelectorAll(".p-chip");
+          for (var j = 0; j < all.length; j++) {
+            all[j].classList.remove("active-chip");
+          }
+          chip.classList.add("active-chip");
+        };
         box.appendChild(chip);
       })(colors250[i]);
     }
@@ -2008,7 +2118,6 @@ body.is-pc #side-gui {
     document.getElementById("btn-tool-pen").classList.toggle("selected", t === "pen");
     document.getElementById("btn-tool-eraser").classList.toggle("selected", t === "eraser");
     document.getElementById("btn-tool-fill").classList.toggle("selected", t === "fill");
-
     if (same) {
       if (bar.classList.contains("show")) {
         bar.classList.remove("show");
@@ -2051,7 +2160,7 @@ body.is-pc #side-gui {
         bar.appendChild(b);
       });
     } else if (t === "fill") {
-      [{n:"厳密", v:5}, {n:"標準", v:25}, {n:"広め", v:60}].forEach(function(o) {
+      [{ n: "厳密", v: 5 }, { n: "標準", v: 25 }, { n: "広め", v: 60 }].forEach(function(o) {
         var b = document.createElement("button");
         b.type = "button";
         b.className = "sz-choice" + (state.fillTol === o.v ? " active" : "");
@@ -2286,11 +2395,7 @@ body.is-pc #side-gui {
       if (seen[idx]) continue;
       seen[idx] = 1;
       var pos = idx * 4;
-      var diff =
-        Math.abs(d[pos] - sr) +
-        Math.abs(d[pos + 1] - sg) +
-        Math.abs(d[pos + 2] - sb) +
-        Math.abs(d[pos + 3] - sa);
+      var diff = Math.abs(d[pos] - sr) + Math.abs(d[pos + 1] - sg) + Math.abs(d[pos + 2] - sb) + Math.abs(d[pos + 3] - sa);
       if (diff <= tol) {
         d[pos] = fr;
         d[pos + 1] = fg;
@@ -2298,17 +2403,17 @@ body.is-pc #side-gui {
         d[pos + 3] = 255;
         if (x > 0) stack.push([x - 1, y]);
         if (x < w - 1) stack.push([x + 1, y]);
-        if (y > 0) stack.push([x, y - 1]);
         if (y < h - 1) stack.push([x, y + 1]);
+        if (y > 0) stack.push([x, y - 1]);
       }
     }
     pCtx.putImageData(img, 0, 0);
   }
 
-  /* 枚数管理・プレビュー・透過・背景連結&登録・完了ボタン */
+  /* 枚数管理・プレビュー・透過背景連結&登録・完了ボタン */
   function refreshFrameLabel() {
     var maxF = getMaxFramesForMode();
-    document.getElementById("frame-info").textContent = (state.frameIdx + 1) + "枚目(全" + state.frames.length + "枚/最大" + maxF + "枚)";
+    document.getElementById("frame-info").textContent = (state.frameIdx + 1) + "枚目 (全" + state.frames.length + "枚 / 最大" + maxF + "枚)";
     document.getElementById("btn-next-page").disabled = (state.frameIdx >= maxF - 1);
   }
 
@@ -2449,17 +2554,13 @@ body.is-pc #side-gui {
     });
   }
 
-  /* 枠の高さ（縦スクロール時は幅）にピタッとフィットさせ、白余白とつなぎ目隙間0でループ描画する */
   function drawAspectSeamlessLoop(ctx, sourceCan, boxX, boxY, boxW, boxH, offsetVal, axis, dir) {
     var sw = sourceCan.width;
     var sh = sourceCan.height;
     if (sw <= 0 || sh <= 0 || boxW <= 0 || boxH <= 0) return;
-
     var scale = (axis === "h") ? (boxH / sh) : (boxW / sw);
-
     var tileW = Math.max(1, Math.round(sw * scale));
     var tileH = Math.max(1, Math.round(sh * scale));
-
     var baseOffsetX = (axis === "h") ? 0 : Math.floor((boxW - tileW) / 2);
     var baseOffsetY = (axis === "v") ? 0 : Math.floor((boxH - tileH) / 2);
 
@@ -2698,7 +2799,6 @@ body.is-pc #side-gui {
     alert("「" + stampObj.name + "」を共有スタンプに登録しました! (" + registeredStamps.length + "/" + MAX_STAMPS + "個)");
   };
 
-  /* 背景素材を最大3個まで登録(最大3枚連結の横長1枚絵として保持) */
   window.registerBackgroundAsset = function() {
     state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     var stripCanvas = buildHorizontalStripCanvas(state.frames, state.canvasW, state.canvasH, null);
@@ -2729,14 +2829,12 @@ body.is-pc #side-gui {
     var h = frameCanvases[0].height;
     var delayCs = Math.max(2, Math.round(delayMs / 10));
     var out = [];
-
     function pushStr(s) {
       for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i) & 0xff);
     }
     function push16(n) {
       out.push(n & 0xff, (n >> 8) & 0xff);
     }
-
     pushStr("GIF89a");
     push16(w);
     push16(h);
@@ -2756,7 +2854,6 @@ body.is-pc #side-gui {
         var lum = (img[p] + img[p + 1] + img[p + 2]) / 3;
         indices[idx] = lum >= 128 ? 1 : 0;
       }
-
       out.push(0x21, 0xf9, 0x04, 0x04);
       push16(delayCs);
       out.push(0x00, 0x00);
@@ -2769,7 +2866,6 @@ body.is-pc #side-gui {
       var endCode = clearCode + 1;
       var codeSize = minCode + 1;
       out.push(minCode);
-
       var bitBuf = 0;
       var bitLen = 0;
       var subBlock = [];
@@ -2781,7 +2877,6 @@ body.is-pc #side-gui {
           for (var j = 0; j < chunk.length; j++) out.push(chunk[j]);
         }
         subBlock = [];
-        out.push(0x00);
       }
 
       function writeCode(code, size) {
@@ -2804,6 +2899,7 @@ body.is-pc #side-gui {
       writeCode(endCode, codeSize);
       if (bitLen > 0) subBlock.push(bitBuf & 0xff);
       flushSubBlocks();
+      out.push(0x00);
     }
     out.push(0x3b);
     return new Blob([new Uint8Array(out)], { type: "image/gif" });
@@ -2835,7 +2931,6 @@ body.is-pc #side-gui {
       document.getElementById("modal-saved-dialog").classList.add("open");
       return;
     }
-
     var sheet = document.createElement("canvas");
     sheet.width = w * n;
     sheet.height = h;
@@ -2869,7 +2964,6 @@ body.is-pc #side-gui {
   var pokeTimer = null;
   var tierNamesJp = ["上段", "中段", "下段"];
 
-  /* 縦画面(基準360×640)で上端・左右余白0、上段・中段・下段の隙間を0とし、下段の下部のみ約1cm (38px) あける */
   function getVerticalThreeTierLayout(totalW, totalH) {
     var bottomPadY = Math.max(24, Math.round(totalH * 0.06));
     var sidePadX = 0;
@@ -2877,7 +2971,6 @@ body.is-pc #side-gui {
     var tierH = Math.floor(stackH / 3);
     var boxW = totalW - sidePadX * 2;
     var tiers = [];
-
     for (var i = 0; i < 3; i++) {
       var topY = i * tierH;
       var h = (i === 2) ? (stackH - topY) : tierH;
@@ -2936,7 +3029,6 @@ body.is-pc #side-gui {
     btn.classList.toggle("active", pokeScrollOn);
   };
 
-  /* 修正箇所③: 縦枠合体プレビュー画面でのスクロール速度変更 */
   window.changePokeScrollSpeed = function(v) {
     pokeScrollSpeed = parseInt(v, 10) || 3;
     var lbl = document.getElementById("poke-speed-val");
@@ -2964,7 +3056,6 @@ body.is-pc #side-gui {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     var tiers = getVerticalThreeTierLayout(w, h);
-
     for (var s = 0; s < 3; s++) {
       var t = tiers[s];
       var bg = pokeSlotsData[s];
@@ -2980,7 +3071,6 @@ body.is-pc #side-gui {
         ctx.restore();
       }
     }
-
     for (var i = 0; i < placedStamps.length; i++) {
       var ps = placedStamps[i];
       var st = ps.stamp;
@@ -3001,7 +3091,6 @@ body.is-pc #side-gui {
     var pCanvasEl = document.getElementById("poke-preview-canvas");
     var pCtxEl = pCanvasEl.getContext("2d");
     var tick = 0;
-
     function tickLoop() {
       tick += 40;
       if (pokeScrollOn) {
@@ -3018,7 +3107,7 @@ body.is-pc #side-gui {
     window.showScreen("screen-pv-timer-setup");
   };
 
-  /* 制限時間(1~5分) ・上中下段/コマ選択・スタンプ配置(+/-サイズ変更・透過反映) MP4録画 */
+  /* 制限時間(1~5分)・上中下段/コマ選択・スタンプ配置 */
   var pvCanvas = document.getElementById("pv-canvas");
   var pvCtx = pvCanvas.getContext("2d");
   var selectedStampIdx = 0;
@@ -3090,7 +3179,6 @@ body.is-pc #side-gui {
     updatePvTargetBadge();
     updatePvTimerLabel();
     window.showScreen("screen-pv");
-
     if (pvCountdownTimer) clearInterval(pvCountdownTimer);
     pvCountdownTimer = setInterval(function() {
       pvRemainingSec--;
@@ -3307,14 +3395,14 @@ body.is-pc #side-gui {
         var upBtn = document.createElement("button");
         upBtn.type = "button";
         upBtn.className = "mini-pill";
-        upBtn.textContent = "↑";
+        upBtn.textContent = "▲";
         upBtn.disabled = (idx === 0);
         upBtn.onclick = function() { window.moveSceneItem(idx, -1); };
 
         var dnBtn = document.createElement("button");
         dnBtn.type = "button";
         dnBtn.className = "mini-pill";
-        dnBtn.textContent = "↓";
+        dnBtn.textContent = "▼";
         dnBtn.disabled = (idx === sceneItems.length - 1);
         dnBtn.onclick = function() { window.moveSceneItem(idx, 1); };
 
@@ -3393,8 +3481,8 @@ body.is-pc #side-gui {
     vid.muted = true;
     vid.playsInline = true;
     vid.preload = "auto";
-    var rafId = null;
 
+    var rafId = null;
     function drawFrameLoop() {
       if (!isJoiningBusy) return;
       outCtx.fillStyle = "#000000";
@@ -3415,7 +3503,6 @@ body.is-pc #side-gui {
       isJoiningBusy = false;
       runBtn.disabled = false;
       backBtn.disabled = false;
-
       var blob = new Blob(chunks, { type: mimeType || "video/webm" });
       var dlUrl = URL.createObjectURL(blob);
       var a = document.createElement("a");
@@ -3456,15 +3543,15 @@ body.is-pc #side-gui {
         }
       };
       vid.src = sceneItems[idx].url;
-      vid.load();
     }
 
+    vid.load();
     recorder.start();
     drawFrameLoop();
     playNextScene(0);
   };
 
-  /* 制限時間終了→合体プレビュー(再生時間設定・確認)→追加/終了/MP4実録画 */
+  /* 制限時間終了→合体プレビュー→追加/終了/MP4録画 */
   var resultLoopTimer = null;
   var recordedVideoBlob = null;
   var recordedVideoExt = "mp4";
@@ -3478,9 +3565,7 @@ body.is-pc #side-gui {
     if (rangeEl && rangeEl.value !== String(pvPlaybackSec)) {
       rangeEl.value = String(pvPlaybackSec);
     }
-    if (valEl) {
-      valEl.textContent = String(pvPlaybackSec);
-    }
+    if (valEl) valEl.textContent = String(pvPlaybackSec);
     if (resultElapsedMs > pvPlaybackSec * 1000) {
       resultElapsedMs = 0;
     }
@@ -3509,7 +3594,6 @@ body.is-pc #side-gui {
     var tick = 0;
     resultElapsedMs = 0;
     updateResultElapsedLabel();
-
     if (resultLoopTimer) clearInterval(resultLoopTimer);
     resultLoopTimer = setInterval(function() {
       tick += 60;
