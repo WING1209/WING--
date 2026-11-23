@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WINGお絵描きPV作成</title>
+<title>WING お絵描きPV作成</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
   * {
@@ -660,6 +660,52 @@
     background: #ffde59;
     border-color: #ff3838;
   }
+
+  /* ③ 動画合体（シーン別・長尺PV）画面 */
+  #screen-scene-join .panel-card {
+    width: 94%;
+    max-width: 640px;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+  }
+  #scene-list-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 2px solid #222222;
+    border-radius: 10px;
+    background: #f8f9fa;
+    padding: 6px;
+    margin: 6px 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .scene-card-row {
+    background: #ffffff;
+    border: 2px solid #222222;
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .scene-name-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .scene-action-group {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -682,15 +728,16 @@
 <div id="screen-title" class="screen active">
   <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
   <div class="blink-start" id="btn-title-start">スタート</div>
-  <div class="version-badge" id="app-version-badge">Ver 1.4.3</div>
+  <div class="version-badge" id="app-version-badge">Ver 1.4.5</div>
 </div>
 
-<!-- 2. メニュー1：人数選択 -->
+<!-- 2. メニュー1：モード選択 -->
 <div id="screen-menu1" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">モード選択</h2>
-    <button type="button" class="pop-btn blue" onclick="chooseMode1('single')">① 一人</button>
-    <button type="button" class="pop-btn purple" onclick="chooseMode1('multi')">② マルチ（最大3人・PeerJS）</button>
+    <button type="button" class="pop-btn blue" onclick="chooseMode1('single')">① 一人で制作</button><br>
+    <button type="button" class="pop-btn purple" onclick="chooseMode1('multi')">② マルチ（最大3人・PeerJS）</button><br>
+    <button type="button" class="pop-btn orange" onclick="openSceneJoinScreen()">③ 動画合体（シーン別）</button>
   </div>
 </div>
 
@@ -757,7 +804,8 @@
     <div id="menu2-status" style="font-size:11px; color:#444; margin-bottom:6px;"></div>
     <button type="button" class="pop-btn" onclick="chooseGameMode('anim')">（１）アニメーション素材（最大10枚）</button><br>
     <button type="button" class="pop-btn blue" onclick="chooseGameMode('bg')">（２）背景（最大3枚横長・最大3個登録）</button><br>
-    <button type="button" class="pop-btn purple" onclick="openPvModeSelect()">（３）PV（合体）</button>
+    <button type="button" class="pop-btn purple" onclick="openPvModeSelect()">（３）PV（合体）</button><br>
+    <button type="button" class="pop-btn gray" style="font-size:11px; padding:4px 12px;" onclick="showScreen('screen-menu1')">モード選択へもどる</button>
   </div>
 </div>
 
@@ -993,6 +1041,32 @@
   </div>
 </div>
 
+<!-- 7-5. ③ 動画合体（シーン別）画面 -->
+<div id="screen-scene-join" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">③ 動画合体（シーン1・シーン2…を順番につなぐ）</h2>
+    <div style="font-size:11px; color:#444; margin-bottom:4px;">
+      出力したMP4などの動画ファイルを複数選び、順番を並べて1本の長尺PVに仕上げます。
+    </div>
+    <div>
+      <input type="file" id="scene-file-input" accept="video/*" multiple style="display:none;" onchange="handleSceneFilesAdd(this.files)">
+      <button type="button" class="pop-btn blue" style="padding:5px 12px; font-size:12px;" onclick="document.getElementById('scene-file-input').click()">+ シーン動画を追加</button>
+      <button type="button" class="pop-btn gray" style="padding:5px 10px; font-size:11px;" onclick="clearSceneQueue()">全消去</button>
+    </div>
+
+    <div id="scene-list-container">
+      <div style="font-size:11px; color:#666; text-align:center; padding:12px;">シーン動画がまだありません。「+ シーン動画を追加」から選択してください。</div>
+    </div>
+
+    <div id="scene-join-status" style="font-size:11px; font-weight:bold; color:#1e90ff; min-height:18px; margin-bottom:4px;"></div>
+
+    <div>
+      <button type="button" class="pop-btn green" id="btn-scene-join-run" onclick="runSceneJoinExport()">シーンを順番につないで出力</button>
+      <button type="button" class="pop-btn gray" id="btn-scene-join-back" onclick="showScreen('screen-menu1')">もどる</button>
+    </div>
+  </div>
+</div>
+
 <!-- 8. 合体プレビュー確認＆追加／終了／MP4保存フロー -->
 <div id="modal-pv-round-result" class="modal-bg">
   <div class="panel-card" style="max-width:460px;">
@@ -1048,7 +1122,7 @@
 (function() {
   "use strict";
 
-  var APP_VERSION = "Ver 1.4.3";
+  var APP_VERSION = "Ver 1.4.5";
   document.getElementById("app-version-badge").textContent = APP_VERSION;
 
   /* ----------------------------
@@ -1107,7 +1181,7 @@
   var MAX_STAMPS = 10;
   var MAX_BG_ASSETS = 3;
   var registeredStamps = [];
-  var bgAssets = []; // 最大3個まで登録できる横長1枚絵背景素材
+  var bgAssets = [];
   var stampRegisteredInCurrentSession = false;
 
   var peerInstance = null;
@@ -1253,7 +1327,7 @@
     });
   }
 
-  /* 透過色を適用したキャンバスを生成（お絵描き画面は白のまま保持し、出力・合成・プレビューで透過適用） */
+  /* 透過色を適用したキャンバスを生成（描画中は白のまま保持し、出力・合成・プレビューで透過適用） */
   function createTransparentFrameCanvas(imgData, transHex) {
     var c = document.createElement("canvas");
     c.width = imgData.width;
@@ -1262,10 +1336,45 @@
     var copy = new ImageData(new Uint8ClampedArray(imgData.data), imgData.width, imgData.height);
     var rgb = hexToRgb(transHex);
     if (rgb) {
+      var w = copy.width;
+      var h = copy.height;
       var px = copy.data;
+      var tol = 8;
+
+      function isMatchTrans(idx4) {
+        return (
+          Math.abs(px[idx4] - rgb.r) <= tol &&
+          Math.abs(px[idx4 + 1] - rgb.g) <= tol &&
+          Math.abs(px[idx4 + 2] - rgb.b) <= tol
+        );
+      }
+
+      // 選択した透明色と一致するピクセルを透過化
       for (var i = 0; i < px.length; i += 4) {
-        if (Math.abs(px[i] - rgb.r) <= 4 && Math.abs(px[i + 1] - rgb.g) <= 4 && Math.abs(px[i + 2] - rgb.b) <= 4) {
+        if (isMatchTrans(i)) {
           px[i + 3] = 0;
+        }
+      }
+
+      // 透明色（または白背景とつながった白領域）の外周アンチエイリアスも軽く透過処理
+      var isWhiteSelected = (rgb.r >= 248 && rgb.g >= 248 && rgb.b >= 248);
+      if (isWhiteSelected) {
+        for (var y = 0; y < h; y++) {
+          for (var x = 0; x < w; x++) {
+            var p = (y * w + x) * 4;
+            if (px[p + 3] === 0) continue;
+            var r = px[p], g = px[p + 1], b = px[p + 2];
+            if (r >= 235 && g >= 235 && b >= 235) {
+              var hasTransparentNeighbor = false;
+              if (x > 0 && px[p - 4 + 3] === 0) hasTransparentNeighbor = true;
+              else if (x < w - 1 && px[p + 4 + 3] === 0) hasTransparentNeighbor = true;
+              else if (y > 0 && px[p - w * 4 + 3] === 0) hasTransparentNeighbor = true;
+              else if (y < h - 1 && px[p + w * 4 + 3] === 0) hasTransparentNeighbor = true;
+              if (hasTransparentNeighbor) {
+                px[p + 3] = 0;
+              }
+            }
+          }
         }
       }
     }
@@ -1273,7 +1382,7 @@
     return c;
   }
 
-  /* 最大3枚のキャンバスを横長1枚絵（幅 * 枚数 × 高さ）に連結 */
+  /* 最大3枚のキャンバスを横長1枚絵（幅×枚数 × 高さ）に連結 */
   function buildHorizontalStripCanvas(framesArr, w, h, transHex) {
     var n = framesArr.length;
     var strip = document.createElement("canvas");
@@ -2356,7 +2465,7 @@
   /* ----------------------------
      （３）PV（合体）モード：①ポケカラ用（上段・中段・下段＋「なし」選択可）
   ---------------------------- */
-  var pokeSlotsData = [null, null, null]; // null は「なし」を表す
+  var pokeSlotsData = [null, null, null];
   var pokeScrollOn = true;
   var pokeAxis = "h";
   var pokeDir = "left";
@@ -2390,7 +2499,7 @@
     for (var s = 0; s < 3; s++) {
       var val = parseInt(document.getElementById("poke-sel-" + s).value, 10);
       if (isNaN(val) || val < 0 || !bgAssets[val]) {
-        pokeSlotsData[s] = null; // なし
+        pokeSlotsData[s] = null;
       } else {
         pokeSlotsData[s] = bgAssets[val];
       }
@@ -2427,7 +2536,7 @@
   };
 
   function drawPokeSlotBand(ctx, bg, bandX, bandY, bandW, bandH, offsetVal) {
-    if (!bg) return; // 「なし」の場合は描画しない
+    if (!bg) return;
     var strip = bg.stripCanvas || buildHorizontalStripCanvas(bg.frames, bg.unitWidth, bg.unitHeight, null);
 
     ctx.save();
@@ -2593,7 +2702,7 @@
     var tierH = h / 3;
     for (var s = 0; s < 3; s++) {
       var bg = pokeSlotsData[s];
-      if (!bg) continue; // 「なし」の段はスキップ
+      if (!bg) continue;
       var strip = bg.stripCanvas || buildHorizontalStripCanvas(bg.frames, bg.unitWidth, bg.unitHeight, null);
       var scrollPx = Math.floor((tickMs / 40) * 3) % w;
       var shiftX = (pokeDir === "right") ? scrollPx : -scrollPx;
@@ -2683,6 +2792,250 @@
     }
   }, { passive: false });
   pvCanvas.addEventListener("touchend", onPvUp);
+
+  /* ----------------------------
+     ③ 動画合体（シーン別・長尺PV）
+  ---------------------------- */
+  var sceneItems = [];
+  var isJoiningBusy = false;
+
+  window.openSceneJoinScreen = function() {
+    renderSceneQueue();
+    document.getElementById("scene-join-status").textContent = "";
+    window.showScreen("screen-scene-join");
+  };
+
+  window.handleSceneFilesAdd = function(files) {
+    if (!files || files.length === 0) return;
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      sceneItems.push({
+        id: "sc_" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2, 6),
+        name: f.name,
+        url: URL.createObjectURL(f)
+      });
+    }
+    document.getElementById("scene-file-input").value = "";
+    renderSceneQueue();
+  };
+
+  window.moveSceneItem = function(idx, delta) {
+    if (isJoiningBusy) return;
+    var target = idx + delta;
+    if (target < 0 || target >= sceneItems.length) return;
+    var tmp = sceneItems[idx];
+    sceneItems[idx] = sceneItems[target];
+    sceneItems[target] = tmp;
+    renderSceneQueue();
+  };
+
+  window.removeSceneItem = function(idx) {
+    if (isJoiningBusy) return;
+    var item = sceneItems[idx];
+    if (item && item.url) {
+      try { URL.revokeObjectURL(item.url); } catch (e) {}
+    }
+    sceneItems.splice(idx, 1);
+    renderSceneQueue();
+  };
+
+  window.clearSceneQueue = function() {
+    if (isJoiningBusy) return;
+    for (var i = 0; i < sceneItems.length; i++) {
+      if (sceneItems[i] && sceneItems[i].url) {
+        try { URL.revokeObjectURL(sceneItems[i].url); } catch (e) {}
+      }
+    }
+    sceneItems = [];
+    renderSceneQueue();
+  };
+
+  function renderSceneQueue() {
+    var box = document.getElementById("scene-list-container");
+    box.innerHTML = "";
+    if (sceneItems.length === 0) {
+      box.innerHTML = "<div style='font-size:11px; color:#666; text-align:center; padding:12px;'>シーン動画がまだありません。「+ シーン動画を追加」から選択してください。</div>";
+      return;
+    }
+    for (var i = 0; i < sceneItems.length; i++) {
+      (function(idx, sc) {
+        var row = document.createElement("div");
+        row.className = "scene-card-row";
+
+        var label = document.createElement("div");
+        label.className = "scene-name-label";
+        label.textContent = "シーン" + (idx + 1) + "： " + sc.name;
+
+        var group = document.createElement("div");
+        group.className = "scene-action-group";
+
+        var upBtn = document.createElement("button");
+        upBtn.type = "button";
+        upBtn.className = "mini-pill";
+        upBtn.textContent = "↑";
+        upBtn.disabled = (idx === 0);
+        upBtn.onclick = function() { window.moveSceneItem(idx, -1); };
+
+        var dnBtn = document.createElement("button");
+        dnBtn.type = "button";
+        dnBtn.className = "mini-pill";
+        dnBtn.textContent = "↓";
+        dnBtn.disabled = (idx === sceneItems.length - 1);
+        dnBtn.onclick = function() { window.moveSceneItem(idx, 1); };
+
+        var delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "mini-pill";
+        delBtn.textContent = "削除";
+        delBtn.onclick = function() { window.removeSceneItem(idx); };
+
+        group.appendChild(upBtn);
+        group.appendChild(dnBtn);
+        group.appendChild(delBtn);
+
+        row.appendChild(label);
+        row.appendChild(group);
+        box.appendChild(row);
+      })(i, sceneItems[i]);
+    }
+  }
+
+  window.runSceneJoinExport = function() {
+    if (isJoiningBusy) return;
+    if (sceneItems.length === 0) {
+      alert("シーン動画を1つ以上追加してください。");
+      return;
+    }
+
+    var outCanvas = document.createElement("canvas");
+    outCanvas.width = 480;
+    outCanvas.height = 300;
+    var outCtx = outCanvas.getContext("2d");
+
+    if (!outCanvas.captureStream || typeof MediaRecorder === "undefined") {
+      alert("このブラウザは動画結合・録画（MediaRecorder）に未対応です。");
+      return;
+    }
+
+    isJoiningBusy = true;
+    var runBtn = document.getElementById("btn-scene-join-run");
+    var backBtn = document.getElementById("btn-scene-join-back");
+    var statusEl = document.getElementById("scene-join-status");
+    runBtn.disabled = true;
+    backBtn.disabled = true;
+
+    var mimeType = "";
+    var ext = "mp4";
+    if (MediaRecorder.isTypeSupported("video/mp4")) {
+      mimeType = "video/mp4";
+      ext = "mp4";
+    } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+      mimeType = "video/webm;codecs=vp8";
+      ext = "webm";
+    } else if (MediaRecorder.isTypeSupported("video/webm")) {
+      mimeType = "video/webm";
+      ext = "webm";
+    }
+
+    var stream = outCanvas.captureStream(30);
+    var chunks = [];
+    var recorder;
+    try {
+      recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1500000 })
+        : new MediaRecorder(stream);
+    } catch (e) {
+      isJoiningBusy = false;
+      runBtn.disabled = false;
+      backBtn.disabled = false;
+      alert("録画の初期化に失敗しました。");
+      return;
+    }
+
+    recorder.ondataavailable = function(ev) {
+      if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+    };
+
+    var vid = document.createElement("video");
+    vid.muted = true;
+    vid.playsInline = true;
+    vid.preload = "auto";
+
+    var rafId = null;
+
+    function drawFrameLoop() {
+      if (!isJoiningBusy) return;
+      outCtx.fillStyle = "#000000";
+      outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+      if (vid.readyState >= 2 && vid.videoWidth > 0 && vid.videoHeight > 0) {
+        var scale = Math.min(outCanvas.width / vid.videoWidth, outCanvas.height / vid.videoHeight);
+        var dw = vid.videoWidth * scale;
+        var dh = vid.videoHeight * scale;
+        var dx = (outCanvas.width - dw) / 2;
+        var dy = (outCanvas.height - dh) / 2;
+        outCtx.drawImage(vid, dx, dy, dw, dh);
+      }
+      rafId = requestAnimationFrame(drawFrameLoop);
+    }
+
+    recorder.onstop = function() {
+      if (rafId) cancelAnimationFrame(rafId);
+      isJoiningBusy = false;
+      runBtn.disabled = false;
+      backBtn.disabled = false;
+
+      var blob = new Blob(chunks, { type: mimeType || "video/webm" });
+      var dlUrl = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.download = "wing_long_pv_" + sceneItems.length + "scenes." + ext;
+      a.href = dlUrl;
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(dlUrl); }, 3000);
+
+      statusEl.textContent = "完了！全" + sceneItems.length + "シーンをつないだ長尺PVを出力しました。";
+      document.getElementById("modal-saved-dialog").classList.add("open");
+    };
+
+    function playNextScene(idx) {
+      if (idx >= sceneItems.length) {
+        if (recorder.state !== "inactive") {
+          recorder.stop();
+        }
+        return;
+      }
+      statusEl.textContent = "シーン結合中: シーン" + (idx + 1) + " / " + sceneItems.length + " (" + sceneItems[idx].name + ")";
+
+      vid.onloadeddata = null;
+      vid.onended = function() {
+        playNextScene(idx + 1);
+      };
+      vid.onerror = function() {
+        playNextScene(idx + 1);
+      };
+
+      vid.pause();
+      vid.removeAttribute("src");
+      vid.load();
+
+      vid.onloadeddata = function() {
+        vid.onloadeddata = null;
+        vid.currentTime = 0;
+        var p = vid.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(function() {
+            playNextScene(idx + 1);
+          });
+        }
+      };
+
+      vid.src = sceneItems[idx].url;
+      vid.load();
+    }
+
+    recorder.start();
+    drawFrameLoop();
+    playNextScene(0);
+  };
 
   /* ----------------------------
      制限時間終了→合体プレビュー→追加／終了／MP4実録画
