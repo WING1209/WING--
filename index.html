@@ -4,1217 +4,2869 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>WINGお絵描きPV作成</title>
-<!-- GIF生成用ライブラリ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;900&display=swap');
-
   * {
     box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: none;
-    font-family: 'M PLUS Rounded 1c', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    font-family: "Hiragino Maru Gothic ProN", "Rounded Mplus 1c", "Meiryo", sans-serif;
   }
 
-  body, html {
+  html, body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #ffde59;
+    background-color: #ffde59;
+    font-size: 13px;
   }
 
-  /* スマホ縦画面時の警告オーバーレイ */
-  #orientation-warning {
+  /* スマホ縦画面警告（PV縦プレビュー中は免除） */
+  #portrait-overlay {
     display: none;
     position: fixed;
-    inset: 0;
-    background: #ff5757;
-    color: #fff;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #ff4757;
+    color: #ffffff;
     z-index: 9999;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 20px;
+    padding: 16px;
   }
-  #orientation-warning .icon {
-    font-size: 60px;
-    animation: rotatePhone 1.5s infinite ease-in-out;
+  #portrait-overlay.show {
+    display: flex;
   }
-  @keyframes rotatePhone {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-90deg); }
-  }
-  @media screen and (max-width: 900px) and (orientation: portrait) {
-    #orientation-warning {
-      display: flex;
-    }
+  .rotate-mark {
+    font-size: 44px;
+    font-weight: bold;
+    margin-bottom: 10px;
   }
 
-  /* 共通画面レイアウト */
+  /* 画面コンテナ */
   .screen {
     display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    position: absolute;
-    inset: 0;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-image: radial-gradient(#ffbd59 20%, transparent 20%), radial-gradient(#ff914d 20%, transparent 20%);
+    padding: 8px 12px;
     background-color: #ffde59;
-    background-position: 0 0, 25px 25px;
-    background-size: 50px 50px;
+    background-image: radial-gradient(#ffbe44 18%, transparent 18%);
+    background-size: 28px 28px;
+    overflow: hidden;
   }
   .screen.active {
     display: flex;
   }
 
-  /* POPなボタン */
-  .pop-btn {
-    background: #ff5757;
-    color: #fff;
-    border: 4px solid #333;
+  /* 右上：スマホ／PC切替バー */
+  .mode-switch-bar {
+    position: fixed;
+    top: 6px;
+    right: 8px;
+    z-index: 500;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #222222;
     border-radius: 20px;
-    padding: 12px 28px;
-    font-size: 1.3rem;
-    font-weight: 900;
-    box-shadow: 0 6px 0 #333;
+    padding: 2px 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .switch-btn {
+    border: none;
+    background: transparent;
+    color: #222222;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 14px;
     cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-    margin: 8px;
+  }
+  .switch-btn.active {
+    background: #ff4757;
+    color: #ffffff;
+  }
+
+  /* POPボタン */
+  .pop-btn {
+    display: inline-block;
+    background: #ff4757;
+    color: #ffffff;
+    border: 3px solid #222222;
+    border-radius: 14px;
+    padding: 7px 16px;
+    margin: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #222222;
+    cursor: pointer;
   }
   .pop-btn:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 #333;
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #222222;
   }
-  .pop-btn.blue { background: #38b6ff; }
-  .pop-btn.green { background: #7ed957; color: #222; }
-  .pop-btn.purple { background: #cb6ce6; }
-  .pop-btn.gray { background: #ccc; color: #333; }
+  .pop-btn.blue { background: #1e90ff; }
+  .pop-btn.green { background: #2ed573; color: #111111; }
+  .pop-btn.purple { background: #9b59b6; }
+  .pop-btn.orange { background: #ffa502; color: #111111; }
+  .pop-btn.gray { background: #dcdde1; color: #222222; }
   .pop-btn:disabled {
-    opacity: 0.5;
-    pointer-events: none;
+    opacity: 0.45;
+    cursor: default;
   }
 
   /* タイトル画面 */
   #screen-title {
     cursor: pointer;
   }
-  .title-logo {
-    font-size: clamp(2.2rem, 6vw, 4.5rem);
+  .pop-title {
+    font-size: 32px;
     font-weight: 900;
-    color: #ff3131;
+    color: #ff3838;
     text-align: center;
-    text-shadow: 
-      4px 4px 0 #fff,
-      -4px -4px 0 #fff,
-      4px -4px 0 #fff,
-      -4px 4px 0 #fff,
-      0 8px 0 #333;
-    transform: rotate(-3deg);
-    animation: bounceTitle 2s infinite ease-in-out;
+    line-height: 1.2;
+    text-shadow: 2px 2px 0 #ffffff, -2px -2px 0 #ffffff, 2px -2px 0 #ffffff, -2px 2px 0 #ffffff, 0 5px 0 #222222;
   }
-  .title-logo span {
-    display: inline-block;
-    color: #38b6ff;
+  .pop-title .sub {
+    color: #1e90ff;
   }
-  @keyframes bounceTitle {
-    0%, 100% { transform: rotate(-3deg) scale(1); }
-    50% { transform: rotate(-1deg) scale(1.05); }
+  .blink-start {
+    margin-top: 20px;
+    background: #222222;
+    color: #ffffff;
+    border: 3px solid #ffffff;
+    border-radius: 30px;
+    padding: 8px 24px;
+    font-size: 18px;
+    font-weight: bold;
+    animation: startBlink 0.9s infinite alternate;
   }
-  .start-blink {
-    margin-top: 40px;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    font-weight: 900;
-    color: #fff;
-    background: #333;
-    padding: 10px 30px;
-    border-radius: 50px;
-    border: 4px solid #fff;
-    animation: blink 1s infinite alternate;
+  @keyframes startBlink {
+    from { opacity: 1; }
+    to { opacity: 0.3; }
   }
-  @keyframes blink {
-    0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0.3; transform: scale(0.95); }
+  .version-badge {
+    position: fixed;
+    bottom: 10px;
+    right: 12px;
+    background: #ffffff;
+    color: #222222;
+    border: 2px solid #222222;
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    box-shadow: 0 2px 0 #222222;
+    pointer-events: none;
   }
 
-  /* カードコンテナ */
-  .card-box {
-    background: #fff;
-    border: 5px solid #333;
-    border-radius: 25px;
-    padding: 25px 35px;
-    box-shadow: 0 10px 0 #333;
+  /* カード枠 */
+  .panel-card {
+    background: #ffffff;
+    border: 3px solid #222222;
+    border-radius: 18px;
+    padding: 10px 16px;
+    box-shadow: 0 5px 0 #222222;
     text-align: center;
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 96%;
+    max-height: 94%;
     overflow-y: auto;
   }
-  .card-title {
-    font-size: 1.6rem;
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: #333;
-  }
-
-  /* マルチプレイ入力など */
-  .pass-display {
-    font-size: 3rem;
-    font-weight: 900;
-    letter-spacing: 10px;
-    background: #eee;
-    border: 4px dashed #333;
-    border-radius: 15px;
-    padding: 10px 25px;
-    margin: 15px 0;
-    color: #ff3131;
-  }
-  input[type="text"], select {
-    font-size: 1.5rem;
-    padding: 10px;
-    border: 4px solid #333;
-    border-radius: 12px;
-    text-align: center;
+  .panel-heading {
+    margin: 0 0 8px 0;
+    font-size: 14px;
     font-weight: bold;
-    width: 180px;
+    color: #222222;
   }
 
-  /* 250色パレット選択画面 */
-  #palette-250-grid {
+  /* マルチ画面用 */
+  .pass-box {
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 8px;
+    background: #f1f2f6;
+    border: 3px dashed #222222;
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin: 10px 0;
+    color: #ff3838;
+  }
+  .pass-input, .count-select {
+    font-size: 15px;
+    font-weight: bold;
+    padding: 6px 10px;
+    border: 3px solid #222222;
+    border-radius: 10px;
+    text-align: center;
+    min-width: 130px;
+  }
+
+  /* 透明色パレット選択画面 */
+  #screen-transparent .panel-card {
+    width: 96%;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+  }
+  .trans-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+  .trans-top-title {
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0;
+  }
+  .trans-top-note {
+    font-size: 10px;
+    color: #555555;
+    margin: 0;
+  }
+  #trans-palette-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: grid;
-    grid-template-columns: repeat(25, 1fr);
-    gap: 2px;
-    width: 100%;
-    max-width: 750px;
-    background: #333;
-    padding: 4px;
+    grid-template-columns: repeat(14, 1fr);
+    gap: 4px;
+    background: #222222;
+    padding: 5px;
     border-radius: 8px;
-    margin: 10px auto;
   }
-  .color-cell {
-    aspect-ratio: 1;
+  body.is-pc #trans-palette-grid {
+    grid-template-columns: repeat(20, 1fr);
+  }
+  .trans-swatch {
+    min-height: 26px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
     cursor: pointer;
-    border: 1px solid rgba(0,0,0,0.1);
-  }
-  .color-cell:hover {
-    transform: scale(1.3);
-    z-index: 2;
-    border: 2px solid #fff;
   }
 
-  /* お絵描きメイン画面 */
+  /* モーダル共通 */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.78);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+  }
+  .modal-bg.open {
+    display: flex;
+  }
+  .big-swatch {
+    width: 100px;
+    height: 100px;
+    border: 4px solid #222222;
+    border-radius: 16px;
+    margin: 8px auto;
+    box-shadow: 0 4px 0 #222222;
+  }
+
+  /* お絵描き画面 */
   #screen-draw {
     flex-direction: row;
-    background: #e0e0e0;
     justify-content: space-between;
+    align-items: stretch;
+    background: #3b3b3b;
+    padding: 6px;
+    gap: 6px;
   }
-
-  /* 左側：キャンバスエリア */
-  #canvas-viewport {
+  #canvas-area {
     flex: 1;
     height: 100%;
     position: relative;
+    background: #6c757d;
+    border: 2px solid #222222;
+    border-radius: 10px;
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #555;
+    touch-action: none;
   }
-  #canvas-wrapper {
+  #canvas-box {
     position: relative;
     width: 480px;
     height: 300px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
     transform-origin: center center;
-    /* 市松模様（透明表現） */
-    background-image: 
-      linear-gradient(45deg, #ccc 25%, transparent 25%), 
-      linear-gradient(-45deg, #ccc 25%, transparent 25%), 
-      linear-gradient(45deg, transparent 75%, #ccc 75%), 
-      linear-gradient(-45deg, transparent 75%, #ccc 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-    background-color: #fff;
+    background-color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   }
-  #draw-canvas, #grid-canvas {
+  #paint-canvas, #grid-overlay-canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 480px;
     height: 300px;
   }
-  #grid-canvas {
+  #grid-overlay-canvas {
     pointer-events: none;
     display: none;
   }
-
-  /* フレームインジケーター（左上） */
-  #frame-badge {
+  .canvas-tag {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(0,0,0,0.75);
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.95rem;
-    z-index: 10;
+    top: 6px;
+    left: 6px;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.72);
+    color: #ffffff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 10px;
     pointer-events: none;
   }
-  #zoom-reset-btn {
+  .zoom-reset {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
-    background: rgba(255,255,255,0.9);
-    border: 2px solid #333;
-    border-radius: 12px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
+    bottom: 6px;
+    left: 6px;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.92);
+    color: #222222;
+    border: 2px solid #222222;
+    border-radius: 8px;
+    font-size: 10px;
     font-weight: bold;
-    z-index: 10;
+    padding: 2px 7px;
     cursor: pointer;
   }
 
-  /* 右側：GUIパネル */
-  #gui-panel {
-    width: 250px;
+  /* 右側GUI */
+  #side-gui {
+    width: 220px;
     height: 100%;
-    background: #fff;
-    border-left: 4px solid #333;
+    background: #ffffff;
+    border: 3px solid #222222;
+    border-radius: 10px;
+    padding: 4px;
     display: flex;
     flex-direction: column;
-    padding: 8px;
-    z-index: 20;
+    flex-shrink: 0;
   }
-  .tool-grid {
+  body.is-pc #side-gui {
+    width: 255px;
+  }
+  .tool-btns {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-    margin-bottom: 6px;
+    gap: 3px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
   }
-  .tool-btn {
-    background: #f0f0f0;
-    border: 3px solid #333;
-    border-radius: 10px;
-    padding: 6px 2px;
-    font-size: 0.78rem;
+  .t-btn {
+    position: relative;
+    background: #f1f2f6;
+    color: #222222;
+    border: 2px solid #222222;
+    border-radius: 7px;
+    padding: 3px 2px;
+    font-size: 10px;
     font-weight: bold;
     cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    line-height: 1.15;
   }
-  .tool-btn.active {
+  .t-btn.selected {
     background: #ffde59;
-    border-color: #ff3131;
-    box-shadow: inset 0 0 0 2px #ff3131;
+    border-color: #ff3838;
   }
-  .tool-btn span.icon {
-    font-size: 1.2rem;
-    line-height: 1.1;
+  .t-sub {
+    display: block;
+    font-size: 8px;
+    color: #555555;
   }
-  .size-badge {
-    position: absolute;
-    top: 2px;
-    right: 4px;
-    font-size: 0.65rem;
-    background: #333;
-    color: #fff;
-    padding: 0 4px;
-    border-radius: 4px;
-  }
-
-  /* 太さ選択ポップアップ */
-  #brush-size-popup {
+  #size-bar {
     display: none;
-    background: #333;
-    color: #fff;
-    padding: 6px;
-    border-radius: 10px;
-    margin-bottom: 6px;
+    background: #2f3542;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 3px;
+    margin-bottom: 4px;
     justify-content: space-around;
     align-items: center;
+    flex-shrink: 0;
   }
-  #brush-size-popup.show {
+  #size-bar.show {
     display: flex;
   }
-  .size-dot-btn {
-    background: #555;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .sz-choice {
+    background: #57606f;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
     cursor: pointer;
   }
-  .size-dot-btn.selected {
-    background: #ff5757;
+  .sz-choice.active {
+    background: #ff4757;
   }
 
   /* GUI下部パレット */
-  #gui-palette-container {
+  #side-palette {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    border: 3px solid #333;
-    border-radius: 8px;
+    background: #222222;
+    border: 2px solid #222222;
+    border-radius: 6px;
     padding: 3px;
-    background: #222;
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     gap: 2px;
     align-content: start;
   }
-  .gui-color {
-    aspect-ratio: 1;
-    cursor: pointer;
+  .p-chip {
+    aspect-ratio: 1 / 1;
     border-radius: 2px;
+    cursor: pointer;
     position: relative;
   }
-  .gui-color.selected {
-    outline: 2px solid #fff;
+  .p-chip.active-chip {
+    outline: 2px solid #ffffff;
     z-index: 2;
-    transform: scale(1.15);
   }
-  .gui-color.disabled-transparent {
+  .p-chip.blocked-chip {
     opacity: 0.15;
     pointer-events: none;
   }
-  .gui-color.disabled-transparent::after {
-    content: "×";
+
+  /* プレビュー＆点線サイズ調整枠 */
+  .preview-box-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    max-height: 36vh;
+    aspect-ratio: 480 / 300;
+    margin: 0 auto 6px auto;
+    touch-action: none;
+  }
+  #preview-stage {
+    border: 3px solid #222222;
+    background: #ffffff;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  #crop-dashed-rect {
+    display: none;
     position: absolute;
-    inset: 0;
-    color: #fff;
-    font-size: 10px;
+    border: 3px dashed #ff3838;
+    background: rgba(255, 56, 56, 0.14);
+    pointer-events: none;
+    transform-origin: center center;
+  }
+  #crop-dashed-rect.active {
+    display: block;
+  }
+  #crop-confirm-bar {
+    display: none;
+    background: #fff3cd;
+    border: 2px solid #222222;
+    border-radius: 10px;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  #crop-confirm-bar.active {
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
-  /* プレビューモーダル＆ダイアログ */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    z-index: 100;
+  .option-row {
+    display: flex;
     justify-content: center;
     align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 4px 0;
+    font-size: 11px;
+    font-weight: bold;
   }
-  .modal-overlay.active {
+  .mini-pill {
+    padding: 3px 8px;
+    border: 2px solid #222222;
+    border-radius: 10px;
+    background: #f1f2f6;
+    color: #222222;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .mini-pill.active {
+    background: #1e90ff;
+    color: #ffffff;
+  }
+
+  /* ポケカラ縦3枠プレビュー画面 */
+  #screen-poke-preview {
+    background: #222222;
+    flex-direction: row;
+    gap: 12px;
+  }
+  #poke-phone-frame {
+    width: 240px;
+    height: 92vh;
+    max-height: 520px;
+    background: #ffffff;
+    border: 4px solid #ffffff;
+    border-radius: 22px;
+    overflow: hidden;
     display: flex;
+    flex-direction: column;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
   }
-  #preview-canvas {
-    border: 4px solid #333;
-    background: #fff;
-    width: 360px;
-    height: 225px;
+  #poke-preview-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  #poke-control-panel {
+    max-width: 340px;
+    text-align: left;
+  }
+
+  /* PV合体編集画面 */
+  #screen-pv {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    background: #2f3542;
+    padding: 6px;
+    gap: 6px;
+  }
+  #pv-stage-wrap {
+    flex: 1;
+    height: 100%;
+    background: #6c757d;
+    border: 2px solid #222222;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    touch-action: none;
+    position: relative;
+  }
+  #pv-top-hud {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .hud-badge {
+    background: rgba(0, 0, 0, 0.78);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 9px;
+    border-radius: 10px;
+    pointer-events: auto;
+  }
+  #pv-canvas {
+    width: 480px;
+    height: 300px;
+    background: #ffffff;
+    border: 3px solid #222222;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  #pv-side {
+    width: 235px;
+    height: 100%;
+    background: #ffffff;
+    border: 3px solid #222222;
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  #stamp-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 2px solid #222222;
+    border-radius: 8px;
+    padding: 4px;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stamp-item {
+    border: 2px solid #222222;
+    border-radius: 8px;
+    padding: 4px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .stamp-item.selected-stamp {
+    background: #ffde59;
+    border-color: #ff3838;
   }
 </style>
 </head>
 <body>
 
 <!-- スマホ縦画面警告 -->
-<div id="orientation-warning">
-  <div class="icon">📱</div>
-  <h2>横画面専用アプリです</h2>
-  <p>端末を横向きにして遊んでね！</p>
+<div id="portrait-overlay">
+  <div class="rotate-mark">↻</div>
+  <div style="font-size:16px; font-weight:bold; margin-bottom:6px;">スマホは横画面専用です</div>
+  <div style="font-size:12px;">横向きにするか、右上の「PC」切替を押してください</div>
+</div>
+
+<!-- スマホ／PC切替スイッチ -->
+<div class="mode-switch-bar" onclick="event.stopPropagation()">
+  <span>表示:</span>
+  <button type="button" class="switch-btn" id="sw-mobile" onclick="applyDevice('mobile')">スマホ</button>
+  <button type="button" class="switch-btn" id="sw-pc" onclick="applyDevice('pc')">PC</button>
 </div>
 
 <!-- 1. タイトル画面 -->
-<div id="screen-title" class="screen active" onclick="goScreen('screen-mode1')">
-  <div class="title-logo">WING<span>お絵描き</span><br>PV作成！</div>
-  <div class="start-blink">▶ スタート</div>
+<div id="screen-title" class="screen active">
+  <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
+  <div class="blink-start" id="btn-title-start">スタート</div>
+  <div class="version-badge" id="app-version-badge">Ver 1.4</div>
 </div>
 
-<!-- 2. メニュー１：人数選択 -->
-<div id="screen-mode1" class="screen">
-  <div class="card-box">
-    <h2 class="card-title">プレイ人数をえらんでね！</h2>
-    <button class="pop-btn blue" onclick="selectPlayMode('single')">① 一人で遊ぶ</button>
-    <button class="pop-btn purple" onclick="selectPlayMode('multi')">② マルチ（5人まで）</button>
+<!-- 2. メニュー1：人数選択 -->
+<div id="screen-menu1" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">モード選択</h2>
+    <button type="button" class="pop-btn blue" onclick="chooseMode1('single')">① 一人</button>
+    <button type="button" class="pop-btn purple" onclick="chooseMode1('multi')">② マルチ（最大3人・PeerJS）</button>
   </div>
 </div>
 
-<!-- 2-B. マルチプレイ：ホスト or ゲスト -->
+<!-- 2-2. マルチ：ホスト／ゲスト -->
 <div id="screen-multi-role" class="screen">
-  <div class="card-box">
-    <h2 class="card-title">マルチプレイ選択</h2>
-    <button class="pop-btn" onclick="goScreen('screen-multi-host-setup')">👑 ホスト（部屋をつくる）</button>
-    <button class="pop-btn blue" onclick="goScreen('screen-multi-guest')">🎮 ゲスト（部屋に入る）</button>
+  <div class="panel-card">
+    <h2 class="panel-heading">マルチプレイ（最大3人）</h2>
+    <div id="peer-net-status" style="font-size:10px; color:#555; margin-bottom:6px;">PeerJS区切り同期モード準備完了</div>
+    <button type="button" class="pop-btn" onclick="showScreen('screen-host-count')">ホスト</button>
+    <button type="button" class="pop-btn blue" onclick="showScreen('screen-guest-pass')">ゲスト</button>
     <br>
-    <button class="pop-btn gray" style="font-size:0.9rem; padding:8px 16px;" onclick="goScreen('screen-mode1')">もどる</button>
+    <button type="button" class="pop-btn gray" style="font-size:12px; padding:5px 14px;" onclick="showScreen('screen-menu1')">もどる</button>
   </div>
 </div>
 
-<!-- 2-C. マルチプレイ：ホスト人数設定 -->
-<div id="screen-multi-host-setup" class="screen">
-  <div class="card-box">
-    <h2 class="card-title">何人で遊ぶ？（2〜5人）</h2>
-    <select id="host-player-count">
+<!-- 2-3. ホスト：人数選択（2〜3人） -->
+<div id="screen-host-count" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">何人で遊ぶ？（最大3人）</h2>
+    <select id="select-players" class="count-select">
       <option value="2">2人</option>
-      <option value="3">3人</option>
-      <option value="4">4人</option>
-      <option value="5">5人</option>
+      <option value="3" selected>3人</option>
     </select>
     <br><br>
-    <button class="pop-btn green" onclick="createHostRoom()">決定</button>
-    <button class="pop-btn gray" onclick="goScreen('screen-multi-role')">もどる</button>
+    <button type="button" class="pop-btn green" onclick="makeHostRoom()">決定</button>
+    <button type="button" class="pop-btn gray" onclick="showScreen('screen-multi-role')">もどる</button>
   </div>
 </div>
 
-<!-- 2-D. マルチプレイ：ホスト待機画面 -->
-<div id="screen-multi-host-wait" class="screen">
-  <div class="card-box">
-    <h2 class="card-title">みんなにパスを教えよう！</h2>
-    <div class="pass-display" id="generated-pass">0000</div>
-    <p id="host-wait-status">接続まち... (1 / 2人)</p>
-    <!-- デモ用：全員揃ったことにして次へ進むボタン -->
-    <button class="pop-btn green" onclick="goScreen('screen-mode2')">全員そろった！（ゲーム選択へ）</button>
+<!-- 2-4. ホスト：4桁パス表示・接続まち -->
+<div id="screen-host-wait" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">4桁パス（接続まち）</h2>
+    <div class="pass-box" id="room-pass-text">0000</div>
+    <div id="host-wait-label" style="font-size:12px; margin-bottom:8px;">接続まち... (1/3人)</div>
+    <button type="button" class="pop-btn green" onclick="showScreen('screen-menu2')">全員接続して次へ</button>
   </div>
 </div>
 
-<!-- 2-E. マルチプレイ：ゲストパス入力 -->
-<div id="screen-multi-guest" class="screen">
-  <div class="card-box">
-    <h2 class="card-title">4桁のパスを入力してね</h2>
-    <input type="text" id="guest-pass-input" maxlength="4" placeholder="1234" inputmode="numeric">
+<!-- 2-5. ゲスト：パス入力 -->
+<div id="screen-guest-pass" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">4桁パスを入力</h2>
+    <input type="text" id="input-pass" class="pass-input" maxlength="4" placeholder="1234">
     <br><br>
-    <button class="pop-btn blue" onclick="joinGuestRoom()">接続</button>
-    <button class="pop-btn gray" onclick="goScreen('screen-multi-role')">もどる</button>
+    <button type="button" class="pop-btn blue" onclick="connectGuest()">接続</button>
+    <button type="button" class="pop-btn gray" onclick="showScreen('screen-multi-role')">もどる</button>
   </div>
 </div>
 
-<!-- 2-F. マルチプレイ：ゲスト接続後待機 -->
-<div id="screen-multi-guest-wait" class="screen">
-  <div class="card-box">
-    <h2 class="card-title">接続完了！</h2>
-    <p>ホストがゲームを始めるまで待機しています...</p>
-    <button class="pop-btn green" style="font-size:0.9rem;" onclick="goScreen('screen-mode2')">（テスト用：次へ進む）</button>
+<!-- 2-6. ゲスト：待機画面 -->
+<div id="screen-guest-wait" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">待機中</h2>
+    <div id="guest-wait-msg" style="font-size:12px; margin-bottom:10px;">つながりました。開始を待っています...</div>
+    <button type="button" class="pop-btn green" style="font-size:12px;" onclick="showScreen('screen-menu2')">（次へ進む）</button>
   </div>
 </div>
 
-<!-- 3. メニュー２：ゲームモード選択 -->
-<div id="screen-mode2" class="screen">
-  <div class="card-box">
-    <h2 class="card-title">なにを作る？</h2>
-    <button class="pop-btn" onclick="selectGameMode('anim')">（１）アニメーション素材</button><br>
-    <button class="pop-btn blue" onclick="selectGameMode('bg')">（２）背景</button><br>
-    <button class="pop-btn purple" onclick="alert('PV（合体）モードは次期アップデートで実装予定です！')">（３）PV（合体）</button>
+<!-- 3. メニュー2：ゲームモード選択 -->
+<div id="screen-menu2" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">ゲームモード選択</h2>
+    <div id="menu2-status" style="font-size:11px; color:#444; margin-bottom:6px;"></div>
+    <button type="button" class="pop-btn" onclick="chooseGameMode('anim')">（１）アニメーション素材（最大10個）</button><br>
+    <button type="button" class="pop-btn blue" onclick="chooseGameMode('bg')">（２）背景</button><br>
+    <button type="button" class="pop-btn purple" onclick="openPvModeSelect()">（３）PV（合体）</button>
   </div>
 </div>
 
-<!-- 4. 透明色選択画面（250色パレット） -->
-<div id="screen-transparent-select" class="screen">
-  <div class="card-box" style="padding: 15px 25px;">
-    <h2 class="card-title" style="margin-bottom:5px;">透明にする色を1つ選んでね！</h2>
-    <p style="font-size:0.85rem; margin:0 0 8px 0; color:#666;">選んだ色はGIF保存時に透明になり、お絵描きパレットでは使えなくなります</p>
-    <div id="palette-250-grid"></div>
+<!-- 4. 透明色選択 -->
+<div id="screen-transparent" class="screen">
+  <div class="panel-card">
+    <div class="trans-top">
+      <div>
+        <div class="trans-top-title">透明色を選択</div>
+        <div class="trans-top-note">タップすると拡大確認が出ます（選択色はパレットで選択不可）</div>
+      </div>
+      <button type="button" class="pop-btn gray" style="font-size:11px; padding:4px 10px; margin:0;" onclick="showScreen('screen-menu2')">もどる</button>
+    </div>
+    <div id="trans-palette-grid"></div>
   </div>
 </div>
 
-<!-- 5. お絵描きメイン画面 -->
+<!-- 4-2. 透明色確認ダイアログ -->
+<div id="modal-trans-confirm" class="modal-bg">
+  <div class="panel-card">
+    <div style="font-size:13px; font-weight:bold;">この色で良いですか？</div>
+    <div id="trans-big-box" class="big-swatch"></div>
+    <div id="trans-hex-label" style="font-size:11px; color:#444; margin-bottom:6px;"></div>
+    <button type="button" class="pop-btn green" style="padding:6px 18px; font-size:13px;" onclick="confirmTrans(true)">はい</button>
+    <button type="button" class="pop-btn gray" style="padding:6px 18px; font-size:13px;" onclick="confirmTrans(false)">いいえ</button>
+  </div>
+</div>
+
+<!-- 5. お絵描き画面 -->
 <div id="screen-draw" class="screen">
-  <!-- 左側キャンバス -->
-  <div id="canvas-viewport">
-    <div id="frame-badge">1枚目 / 最大10枚</div>
-    <button id="zoom-reset-btn" onclick="resetZoom()">🔍 100%に戻す</button>
-    <div id="canvas-wrapper">
-      <canvas id="draw-canvas" width="480" height="300"></canvas>
-      <canvas id="grid-canvas" width="480" height="300"></canvas>
+  <div id="canvas-area">
+    <div class="canvas-tag" id="frame-info">1枚目 / 最大10枚</div>
+    <button type="button" class="zoom-reset" onclick="resetCanvasView()">ズームリセット</button>
+    <div id="canvas-box">
+      <canvas id="paint-canvas" width="480" height="300"></canvas>
+      <canvas id="grid-overlay-canvas" width="480" height="300"></canvas>
     </div>
   </div>
 
-  <!-- 右側GUI -->
-  <div id="gui-panel">
-    <div class="tool-grid">
-      <button class="tool-btn active" id="tool-pen" onclick="handleToolClick('pen')">
-        <span class="size-badge" id="badge-pen">4px</span>
-        <span class="icon">✏️</span>ペン
+  <div id="side-gui">
+    <div class="tool-btns">
+      <button type="button" class="t-btn selected" id="btn-tool-pen" onclick="selectTool('pen')">
+        ペン<span class="t-sub" id="lbl-pen">4px</span>
       </button>
-      <button class="tool-btn" id="tool-eraser" onclick="handleToolClick('eraser')">
-        <span class="size-badge" id="badge-eraser">10px</span>
-        <span class="icon">🧹</span>消しゴム
+      <button type="button" class="t-btn" id="btn-tool-eraser" onclick="selectTool('eraser')">
+        消しゴム<span class="t-sub" id="lbl-eraser">10px</span>
       </button>
-      <button class="tool-btn" id="tool-bucket" onclick="handleToolClick('bucket')">
-        <span class="size-badge" id="badge-bucket">標準</span>
-        <span class="icon">🪣</span>塗りつぶし
+      <button type="button" class="t-btn" id="btn-tool-fill" onclick="selectTool('fill')">
+        塗つぶし<span class="t-sub" id="lbl-fill">標準</span>
       </button>
-      <button class="tool-btn" id="tool-grid" onclick="toggleGrid()">
-        <span class="icon">田</span>グリッド
+      <button type="button" class="t-btn" id="btn-tool-grid" onclick="toggleGrid()">
+        グリッド<span class="t-sub">60×60</span>
       </button>
-      <button class="tool-btn" id="tool-undo" onclick="undo()">
-        <span class="icon">←</span>戻す
+      <button type="button" class="t-btn" onclick="doUndo()">
+        ←<span class="t-sub">戻す</span>
       </button>
-      <button class="tool-btn" id="tool-redo" onclick="redo()">
-        <span class="icon">→</span>進む
+      <button type="button" class="t-btn" onclick="doRedo()">
+        →<span class="t-sub">次動作</span>
       </button>
-      <button class="tool-btn" onclick="saveCurrentPNG()">
-        <span class="icon">💾</span>保存(PNG)
+      <button type="button" class="t-btn" onclick="savePNG()">
+        保存<span class="t-sub">PNG</span>
       </button>
-      <button class="tool-btn" id="btn-next-frame" onclick="nextFrame()">
-        <span class="icon">⏭️</span>次へ
+      <button type="button" class="t-btn" id="btn-next-page" onclick="goNextFrame()">
+        次へ<span class="t-sub" id="lbl-next-limit">最大10枚</span>
       </button>
-      <button class="tool-btn" style="background:#7ed957;" onclick="openPreview()">
-        <span class="icon">🎬</span>完了
+      <button type="button" class="t-btn" id="btn-draw-done" style="background:#2ed573;" onclick="onDrawDoneClicked()">
+        完了<span class="t-sub">プレビュー</span>
       </button>
     </div>
 
-    <!-- ツール再タップ時のオプションバー -->
-    <div id="brush-size-popup"></div>
-
-    <!-- パレット -->
-    <div id="gui-palette-container"></div>
+    <div id="size-bar"></div>
+    <div id="side-palette"></div>
   </div>
 </div>
 
-<!-- 6. 完了プレビュー＆GIF保存モーダル -->
-<div id="modal-preview" class="modal-overlay">
-  <div class="card-box">
-    <h2 class="card-title">アニメーションプレビュー</h2>
-    <canvas id="preview-canvas" width="480" height="300"></canvas>
-    <div style="margin: 12px 0;">
-      <label style="font-weight:bold;">スピード調整: <span id="speed-label">200</span> ms</label><br>
-      <input type="range" id="speed-slider" min="50" max="1000" step="50" value="200" style="width:250px;" oninput="updateAnimSpeed(this.value)">
+<!-- 6. プレビュー画面 -->
+<div id="modal-preview" class="modal-bg">
+  <div class="panel-card">
+    <div style="font-size:13px; font-weight:bold; margin-bottom:4px;" id="preview-modal-title">プレビュー</div>
+
+    <div class="preview-box-wrap" id="preview-crop-area">
+      <canvas id="preview-stage" width="480" height="300"></canvas>
+      <div id="crop-dashed-rect"></div>
     </div>
-    <button class="pop-btn green" id="btn-save-gif" onclick="exportGIF()">✨ アニメーションGIFで保存</button>
-    <button class="pop-btn gray" onclick="closePreview()">もどる</button>
+
+    <div id="crop-confirm-bar">
+      <span>ピンチイン/アウトで枠調整</span>
+      <button type="button" class="pop-btn green" style="padding:3px 10px; font-size:11px; margin:0;" onclick="applyCropSize()">OK</button>
+      <button type="button" class="pop-btn gray" style="padding:3px 10px; font-size:11px; margin:0;" onclick="cancelCropSize()">取消</button>
+    </div>
+
+    <div id="bg-anim-options" style="display:none;">
+      <div class="option-row">
+        <span>条件:</span>
+        <button type="button" class="mini-pill active" id="bg-cond-seq" onclick="setBgCondition('sequence')">連続</button>
+        <button type="button" class="mini-pill" id="bg-cond-h" onclick="setBgCondition('horizontal')">横</button>
+        <button type="button" class="mini-pill" id="bg-cond-v" onclick="setBgCondition('vertical')">縦</button>
+      </div>
+      <div class="option-row" id="bg-dir-row" style="display:none;">
+        <span>向き:</span>
+        <button type="button" class="mini-pill active" id="bg-dir-1" onclick="setBgDirection('pos')">右 / 下</button>
+        <button type="button" class="mini-pill" id="bg-dir-2" onclick="setBgDirection('neg')">左 / 上</button>
+      </div>
+    </div>
+
+    <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">
+      スピード: <span id="speed-val">200</span>ms
+      <input type="range" id="speed-range" min="50" max="1000" step="50" value="200" style="width:140px; vertical-align:middle;" oninput="changeSpeed(this.value)">
+    </div>
+
+    <div id="preview-action-buttons">
+      <button type="button" class="pop-btn orange" id="btn-pv-crop" style="padding:5px 10px; font-size:11px;" onclick="startCropSizeMode()">サイズ調整</button>
+      <button type="button" class="pop-btn purple" id="btn-pv-stamp" style="padding:5px 10px; font-size:11px;" onclick="registerStamp()">スタンプ登録</button>
+      <button type="button" class="pop-btn orange" id="btn-pv-gif" style="display:none; padding:5px 10px; font-size:11px;" onclick="saveBackgroundGIF()">GIF保存</button>
+      <button type="button" class="pop-btn green" id="btn-pv-save" style="padding:5px 10px; font-size:11px;" onclick="savePreviewAsset()">保存</button>
+      <button type="button" class="pop-btn gray" style="padding:5px 10px; font-size:11px;" onclick="closeAnimPreview()">もどる</button>
+    </div>
   </div>
 </div>
 
-<!-- 7. 保存後の確認ダイアログ -->
-<div id="modal-after-save" class="modal-overlay">
-  <div class="card-box">
-    <h2 class="card-title">保存が完了しました！</h2>
-    <p style="font-size:1.2rem; font-weight:bold;">メニュー画面へ戻りますか？</p>
-    <button class="pop-btn blue" onclick="returnToMenu()">はい</button>
-    <button class="pop-btn gray" onclick="closeAfterSaveDialog()">いいえ</button>
+<!-- 7-0. （３）PV（合体）モード選択 -->
+<div id="screen-pv-select" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">（３）PV（合体）モード選択</h2>
+    <button type="button" class="pop-btn orange" onclick="openPokeSetup()">① ポケカラ用（縦3枠）</button><br>
+    <button type="button" class="pop-btn gray" disabled onclick="alert('②横画面自由配置モードは現在保留中です')">② 横画面自由配置（保留中）</button><br>
+    <button type="button" class="pop-btn gray" style="font-size:12px; padding:5px 14px;" onclick="showScreen('screen-menu2')">もどる</button>
+  </div>
+</div>
+
+<!-- 7-1. ①ポケカラ用（縦3枠）枠割り当て設定 -->
+<div id="screen-poke-setup" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">ポケカラ用（縦3枠）設定</h2>
+    <div id="poke-slot-selectors" style="text-align:left; font-size:12px; margin-bottom:8px;"></div>
+    <button type="button" class="pop-btn green" onclick="buildPokeVerticalPreview()">OK（縦プレビューへ）</button>
+    <button type="button" class="pop-btn gray" onclick="showScreen('screen-pv-select')">もどる</button>
+  </div>
+</div>
+
+<!-- 7-2. ポケカラ用 縦画面フィットプレビュー -->
+<div id="screen-poke-preview" class="screen">
+  <div id="poke-phone-frame">
+    <canvas id="poke-preview-canvas" width="240" height="480"></canvas>
+  </div>
+  <div class="panel-card" id="poke-control-panel">
+    <h2 class="panel-heading">縦枠合体プレビュー</h2>
+    <div style="font-size:11px; color:#444; margin-bottom:6px;">
+      ※3枚ある場合はデフォルト2枚目を表示。スクロール時に1枚目・3枚目へ隙間0でループ表示します。
+    </div>
+    <div class="option-row">
+      <button type="button" class="mini-pill active" id="poke-scroll-toggle" onclick="togglePokeScroll()">スクロール: ON</button>
+    </div>
+    <div class="option-row">
+      <span>軸:</span>
+      <button type="button" class="mini-pill active" id="poke-axis-v" onclick="setPokeAxis('v')">縦</button>
+      <button type="button" class="mini-pill" id="poke-axis-h" onclick="setPokeAxis('h')">横</button>
+    </div>
+    <div class="option-row" id="poke-dir-h-row" style="display:none;">
+      <span>横向き:</span>
+      <button type="button" class="mini-pill active" id="poke-h-right" onclick="setPokeDir('right')">右</button>
+      <button type="button" class="mini-pill" id="poke-h-left" onclick="setPokeDir('left')">左</button>
+    </div>
+    <div class="option-row" id="poke-dir-v-row">
+      <span>縦向き:</span>
+      <button type="button" class="mini-pill active" id="poke-v-up" onclick="setPokeDir('up')">上</button>
+      <button type="button" class="mini-pill" id="poke-v-down" onclick="setPokeDir('down')">下</button>
+    </div>
+    <div style="margin-top:8px;">
+      <button type="button" class="pop-btn green" onclick="confirmPokePreviewAndStartTimer()">OK（スタンプ編集へ）</button>
+      <button type="button" class="pop-btn gray" onclick="showScreen('screen-poke-setup')">もどる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 7-3. 制限時間選択（1〜5分） -->
+<div id="screen-pv-timer-setup" class="screen">
+  <div class="panel-card">
+    <h2 class="panel-heading">編集の制限時間を選択（1〜5分）</h2>
+    <select id="select-pv-minutes" class="count-select">
+      <option value="1">1分</option>
+      <option value="2">2分</option>
+      <option value="3">3分</option>
+      <option value="4">4分</option>
+      <option value="5">5分</option>
+    </select>
+    <br><br>
+    <button type="button" class="pop-btn green" onclick="startPvEditingSession()">各自編集を開始</button>
+    <button type="button" class="pop-btn gray" onclick="showScreen('screen-pv-select')">もどる</button>
+  </div>
+</div>
+
+<!-- 7-4. （３）PV（合体）編集画面 -->
+<div id="screen-pv" class="screen">
+  <div id="pv-stage-wrap">
+    <div id="pv-top-hud">
+      <div class="hud-badge" id="pv-timer-badge">残り 01:00</div>
+      <div class="hud-badge" id="pv-target-badge">対象: 1段目 / 1枚目</div>
+      <button type="button" class="mini-pill" style="pointer-events:auto;" onclick="finishPvEditingRound()">時間終了・合体へ</button>
+    </div>
+    <canvas id="pv-canvas" width="480" height="300"></canvas>
+  </div>
+  <div id="pv-side">
+    <div style="font-size:11px; font-weight:bold; text-align:center;">段・コマ選択</div>
+    <div class="option-row">
+      <button type="button" class="mini-pill active" id="pv-tier-1" onclick="setPvTier(0)">1段目</button>
+      <button type="button" class="mini-pill" id="pv-tier-2" onclick="setPvTier(1)">2段目</button>
+      <button type="button" class="mini-pill" id="pv-tier-3" onclick="setPvTier(2)">3段目</button>
+    </div>
+    <div class="option-row">
+      <button type="button" class="mini-pill active" id="pv-slot-1" onclick="setPvSlot(0)">1枚目</button>
+      <button type="button" class="mini-pill" id="pv-slot-2" onclick="setPvSlot(1)">2枚目</button>
+      <button type="button" class="mini-pill" id="pv-slot-3" onclick="setPvSlot(2)">3枚目</button>
+    </div>
+    <div style="font-size:11px; font-weight:bold; text-align:center;">共有スタンプ（最大10種）</div>
+    <div id="stamp-list"></div>
+    <button type="button" class="pop-btn blue" style="padding:5px 8px; font-size:11px; margin:0;" onclick="placeSelectedStamp()">スタンプ配置</button>
+    <button type="button" class="pop-btn gray" style="padding:4px 8px; font-size:10px; margin:0;" onclick="finishPvEditingRound()">強制終了して合体確認</button>
+  </div>
+</div>
+
+<!-- 8. 合体プレビュー確認＆追加／終了／MP4保存フロー -->
+<div id="modal-pv-round-result" class="modal-bg">
+  <div class="panel-card" style="max-width:460px;">
+    <div style="font-size:14px; font-weight:bold; margin-bottom:4px;">合体アニメーションプレビュー</div>
+    <canvas id="pv-result-canvas" width="360" height="225" style="border:3px solid #222; background:#fff; max-width:100%;"></canvas>
+
+    <!-- ゲスト向け：追加または終了 -->
+    <div id="pv-guest-choice-box" style="display:none; margin-top:8px;">
+      <div style="font-size:12px; font-weight:bold; margin-bottom:4px;">編集を追加しますか？終了しますか？</div>
+      <button type="button" class="pop-btn blue" onclick="guestChooseAdd()">追加</button>
+      <button type="button" class="pop-btn gray" onclick="guestChooseEnd()">終了</button>
+    </div>
+
+    <!-- ゲストが「追加」を押したときの希望時間選択 -->
+    <div id="pv-guest-add-time-box" style="display:none; margin-top:8px;">
+      <div style="font-size:12px; font-weight:bold; margin-bottom:4px;">希望する追加制限時間を選択（1〜5分）</div>
+      <select id="select-guest-add-min" class="count-select">
+        <option value="1">1分</option>
+        <option value="2">2分</option>
+        <option value="3">3分</option>
+        <option value="4">4分</option>
+        <option value="5">5分</option>
+      </select>
+      <button type="button" class="pop-btn green" onclick="submitGuestAddRequest()">決定してホストへ送信</button>
+    </div>
+
+    <!-- ホスト／一人モード向け：希望結果確認＆追加または保存 -->
+    <div id="pv-host-decision-box" style="display:none; margin-top:8px;">
+      <div id="pv-host-requests-summary" style="font-size:11px; background:#f1f2f6; border:2px solid #222; border-radius:8px; padding:6px; margin-bottom:6px; text-align:left;"></div>
+      <button type="button" class="pop-btn orange" onclick="hostChooseAddMore()">追加</button>
+      <button type="button" class="pop-btn green" id="btn-record-mp4" onclick="hostChooseSaveMp4()">保存（MP4録画）</button>
+    </div>
+
+    <!-- 保存完了後：各自保存先選択＆タイトル戻り -->
+    <div id="pv-final-save-box" style="display:none; margin-top:8px;">
+      <div id="pv-mp4-status" style="font-size:12px; font-weight:bold; color:#1e90ff; margin-bottom:6px;"></div>
+      <button type="button" class="pop-btn green" onclick="chooseSaveLocationAndReturn()">保存先を選んで保存（タイトルへ）</button>
+      <button type="button" class="pop-btn gray" onclick="returnToTitleImmediately()">終了（タイトルへ）</button>
+    </div>
+  </div>
+</div>
+
+<!-- 9. 保存後メニュー戻り確認ダイアログ -->
+<div id="modal-saved-dialog" class="modal-bg">
+  <div class="panel-card">
+    <div style="font-size:14px; font-weight:bold; margin-bottom:8px;">メニュー画面へ戻りますか？</div>
+    <button type="button" class="pop-btn blue" style="padding:6px 18px; font-size:13px;" onclick="afterSaveChoice(true)">はい</button>
+    <button type="button" class="pop-btn gray" style="padding:6px 18px; font-size:13px;" onclick="afterSaveChoice(false)">いいえ</button>
   </div>
 </div>
 
 <script>
-/* ==========================================
-   1. 250色カラーパレット生成
-========================================== */
-const PALETTE_250 = [];
-(function generate250Colors() {
-  // 10段階グレースケール
-  for (let i = 0; i < 10; i++) {
-    const v = Math.round((255 / 9) * i);
-    const hex = '#' + [v, v, v].map(x => x.toString(16).padStart(2, '0')).join('');
-    PALETTE_250.push(hex);
+(function() {
+  "use strict";
+
+  var APP_VERSION = "Ver 1.4";
+  document.getElementById("app-version-badge").textContent = APP_VERSION;
+
+  /* ----------------------------
+     カラーパレット（250色）生成
+  ---------------------------- */
+  var colors250 = [];
+  for (var g = 0; g < 10; g++) {
+    var v = Math.round((255 / 9) * g);
+    var vh = v.toString(16);
+    if (vh.length < 2) vh = "0" + vh;
+    colors250.push("#" + vh + vh + vh);
   }
-  // 24色相 × 10明度・彩度バリエーション = 240色 (合計250色)
-  const hues = 24;
-  const tones = [
+  var toneList = [
     [100, 85], [100, 70], [100, 55], [100, 45], [100, 30],
     [70, 80],  [70, 60],  [70, 40],  [45, 75],  [45, 45]
   ];
-  for (let h = 0; h < hues; h++) {
-    const hue = Math.round((360 / hues) * h);
-    for (let t = 0; t < tones.length; t++) {
-      PALETTE_250.push(hslToHex(hue, tones[t][0], tones[t][1]));
+  for (var h = 0; h < 24; h++) {
+    var deg = Math.round((360 / 24) * h);
+    for (var t = 0; t < toneList.length; t++) {
+      colors250.push(hslToHex(deg, toneList[t][0], toneList[t][1]));
     }
   }
-})();
 
-function hslToHex(h, s, l) {
-  l /= 100;
-  const a = s * Math.min(l, 1 - l) / 100;
-  const f = n => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color).toString(16).padStart(2, '0');
+  function hslToHex(h, s, l) {
+    s /= 100;
+    l /= 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    var m = l - c / 2;
+    var r = 0, gr = 0, b = 0;
+    if (h < 60) { r = c; gr = x; }
+    else if (h < 120) { r = x; gr = c; }
+    else if (h < 180) { gr = c; b = x; }
+    else if (h < 240) { gr = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
+    function to2(n) {
+      var hx = Math.round((n + m) * 255).toString(16);
+      return hx.length < 2 ? "0" + hx : hx;
+    }
+    return "#" + to2(r) + to2(gr) + to2(b);
+  }
+
+  /* ----------------------------
+     セッション保持データ＆PeerJS区切り同期
+  ---------------------------- */
+  var MAX_STAMPS = 10;
+  var registeredStamps = [];
+  var singleBgLibrary = [];
+  var multiBgByPlayer = { 1: null, 2: null, 3: null };
+
+  var peerInstance = null;
+  var peerConns = [];
+  var peerConnectedCount = 1;
+  var guestRequests = [];
+
+  var state = {
+    device: "pc",
+    playMode: "single", // "single" | "multi"
+    role: "host",       // "host" | "guest"
+    playerCount: 3,     // 最大3人
+    myPlayerId: 1,
+    roomPass: "",
+    gameMode: "anim",   // "anim" | "bg"
+    transparentColor: null,
+    tempTransparentColor: null,
+    drawColor: "#000000",
+    tool: "pen",
+    penSize: 4,
+    eraserSize: 10,
+    fillTol: 25,
+    gridOn: false,
+    canvasW: 480,
+    canvasH: 300,
+    frames: [],
+    frameIdx: 0,
+    undoList: [],
+    redoList: [],
+    bgCondition: "sequence",
+    bgDirection: "pos"
   };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
 
-/* ==========================================
-   2. 画面遷移とゲームステート管理
-========================================== */
-let gameState = {
-  playMode: 'single',
-  gameMode: 'anim',
-  transparentColor: null,
-  currentColor: '#000000',
-  currentTool: 'pen',
-  penSize: 4,
-  eraserSize: 10,
-  bucketTolerance: 10,
-  gridVisible: false,
-  frames: [], // ImageData配列（最大10枚）
-  currentFrameIndex: 0,
-  history: [], // 現在のフレームのUndo履歴
-  redoStack: []
-};
-
-function goScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function selectPlayMode(mode) {
-  gameState.playMode = mode;
-  if (mode === 'single') {
-    goScreen('screen-mode2');
-  } else {
-    goScreen('screen-multi-role');
+  function safeSendPeer(payload) {
+    if (state.playMode !== "multi" || !peerConns || peerConns.length === 0) return;
+    for (var i = 0; i < peerConns.length; i++) {
+      try {
+        if (peerConns[i] && peerConns[i].open) {
+          peerConns[i].send(payload);
+        }
+      } catch (e) {
+        // 送信失敗時もクラッシュさせず継続
+      }
+    }
   }
-}
 
-function createHostRoom() {
-  const count = document.getElementById('host-player-count').value;
-  const pass = Math.floor(1000 + Math.random() * 9000);
-  document.getElementById('generated-pass').textContent = pass;
-  document.getElementById('host-wait-status').textContent = `接続まち... (1 / ${count}人)`;
-  goScreen('screen-multi-host-wait');
-}
-
-function joinGuestRoom() {
-  const val = document.getElementById('guest-pass-input').value;
-  if (!/^\d{4}$/.test(val)) {
-    alert('4桁の数字を入力してください');
-    return;
+  function handlePeerMessage(msg) {
+    if (!msg || typeof msg !== "object") return;
+    if (msg.type === "stamp_share" && msg.stamp) {
+      if (registeredStamps.length < MAX_STAMPS) {
+        var restoredFrames = msg.stamp.frames.map(function(f) {
+          return new ImageData(new Uint8ClampedArray(f.data), f.width, f.height);
+        });
+        registeredStamps.push({
+          id: msg.stamp.id,
+          name: msg.stamp.name,
+          ownerPlayerId: msg.stamp.ownerPlayerId,
+          width: msg.stamp.width,
+          height: msg.stamp.height,
+          speed: msg.stamp.speed,
+          transparentColor: msg.stamp.transparentColor,
+          frames: restoredFrames
+        });
+        updateMenu2Status();
+        renderStampList();
+      }
+    } else if (msg.type === "guest_decision") {
+      guestRequests.push({
+        playerId: msg.playerId || 2,
+        action: msg.action,
+        minutes: msg.minutes || 0
+      });
+      refreshHostRequestsSummary();
+    } else if (msg.type === "round_start") {
+      startPvEditingSession(msg.minutes || 1, true);
+    } else if (msg.type === "round_finish") {
+      finishPvEditingRound(true);
+    } else if (msg.type === "save_ready") {
+      document.getElementById("pv-host-decision-box").style.display = "none";
+      document.getElementById("pv-guest-choice-box").style.display = "none";
+      document.getElementById("pv-final-save-box").style.display = "block";
+      document.getElementById("pv-mp4-status").textContent = "ホストが保存フェーズへ進みました。保存先を選んで保存してください。";
+    }
   }
-  goScreen('screen-multi-guest-wait');
-}
 
-function selectGameMode(mode) {
-  gameState.gameMode = mode;
-  if (mode === 'anim') {
-    renderTransparentSelector();
-    goScreen('screen-transparent-select');
-  } else {
-    gameState.transparentColor = null;
-    initDrawingSession();
-    goScreen('screen-draw');
+  function initPeerAsHost(pass) {
+    if (typeof Peer === "undefined") {
+      document.getElementById("peer-net-status").textContent = "オフライン／ローカル互換モードで動作中";
+      return;
+    }
+    try {
+      if (peerInstance) peerInstance.destroy();
+      peerConns = [];
+      peerConnectedCount = 1;
+      peerInstance = new Peer("wing-pv-room-" + pass);
+      peerInstance.on("connection", function(conn) {
+        if (peerConnectedCount >= state.playerCount) {
+          conn.close();
+          return;
+        }
+        peerConns.push(conn);
+        peerConnectedCount++;
+        document.getElementById("host-wait-label").textContent = "接続まち... (" + peerConnectedCount + "/" + state.playerCount + "人)";
+        conn.on("data", handlePeerMessage);
+      });
+      peerInstance.on("error", function() {
+        document.getElementById("host-wait-label").textContent = "ローカル同期モード (" + peerConnectedCount + "/" + state.playerCount + "人)";
+      });
+    } catch (e) {
+      // エラー時も続行
+    }
   }
-}
 
-function renderTransparentSelector() {
-  const grid = document.getElementById('palette-250-grid');
-  grid.innerHTML = '';
-  PALETTE_250.forEach(hex => {
-    const cell = document.createElement('div');
-    cell.className = 'color-cell';
-    cell.style.backgroundColor = hex;
-    cell.onclick = () => {
-      gameState.transparentColor = hex;
-      initDrawingSession();
-      goScreen('screen-draw');
+  function initPeerAsGuest(pass, onDone) {
+    if (typeof Peer === "undefined") {
+      onDone("ローカル互換モードで接続しました。");
+      return;
+    }
+    try {
+      if (peerInstance) peerInstance.destroy();
+      peerConns = [];
+      peerInstance = new Peer();
+      peerInstance.on("open", function() {
+        var conn = peerInstance.connect("wing-pv-room-" + pass);
+        peerConns.push(conn);
+        conn.on("open", function() {
+          onDone("ホスト（パス:" + pass + "）とつながりました。");
+        });
+        conn.on("data", handlePeerMessage);
+        setTimeout(function() {
+          if (!conn.open) {
+            onDone("待機中（通信再試行／ローカル互換モード）");
+          }
+        }, 2500);
+      });
+      peerInstance.on("error", function() {
+        onDone("ローカル互換モードで待機中...");
+      });
+    } catch (e) {
+      onDone("ローカル互換モードで待機中...");
+    }
+  }
+
+  function cloneImageDataList(list) {
+    return list.map(function(src) {
+      return new ImageData(new Uint8ClampedArray(src.data), src.width, src.height);
+    });
+  }
+
+  function updateMenu2Status() {
+    var stEl = document.getElementById("menu2-status");
+    var bgCount = state.playMode === "single"
+      ? singleBgLibrary.length
+      : Object.keys(multiBgByPlayer).filter(function(k) { return !!multiBgByPlayer[k]; }).length;
+    stEl.textContent = "共有スタンプ: " + registeredStamps.length + "/" + MAX_STAMPS + "個 ｜ 登録背景: " + bgCount + (state.playMode === "single" ? "/3個" : "セット");
+  }
+
+  /* ----------------------------
+     スマホ／PC判別＆縦画面チェック
+  ---------------------------- */
+  function detectInitialDevice() {
+    var touch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+    var small = Math.min(window.screen.width || window.innerWidth, window.screen.height || window.innerHeight) <= 820;
+    return (touch && small) ? "mobile" : "pc";
+  }
+
+  window.applyDevice = function(mode) {
+    state.device = mode;
+    if (mode === "pc") {
+      document.body.classList.add("is-pc");
+      document.body.classList.remove("is-mobile");
+      document.getElementById("sw-pc").className = "switch-btn active";
+      document.getElementById("sw-mobile").className = "switch-btn";
+    } else {
+      document.body.classList.add("is-mobile");
+      document.body.classList.remove("is-pc");
+      document.getElementById("sw-mobile").className = "switch-btn active";
+      document.getElementById("sw-pc").className = "switch-btn";
+    }
+    checkPortraitOverlay();
+    fitDrawCanvas();
+  };
+
+  function checkPortraitOverlay() {
+    var ov = document.getElementById("portrait-overlay");
+    var activePokePreview = document.getElementById("screen-poke-preview").classList.contains("active");
+    var isPortrait = window.innerHeight > window.innerWidth;
+    if (!activePokePreview && state.device === "mobile" && isPortrait) {
+      ov.className = "show";
+    } else {
+      ov.className = "";
+    }
+  }
+
+  /* ----------------------------
+     画面遷移
+  ---------------------------- */
+  window.showScreen = function(id) {
+    var list = document.querySelectorAll(".screen");
+    for (var i = 0; i < list.length; i++) {
+      list[i].classList.remove("active");
+    }
+    var el = document.getElementById(id);
+    if (el) el.classList.add("active");
+    if (id === "screen-menu2") {
+      updateMenu2Status();
+    }
+    if (id === "screen-draw") {
+      setTimeout(fitDrawCanvas, 20);
+    }
+    checkPortraitOverlay();
+  };
+
+  document.getElementById("screen-title").addEventListener("click", function() {
+    window.showScreen("screen-menu1");
+  });
+  document.getElementById("btn-title-start").addEventListener("click", function(e) {
+    e.stopPropagation();
+    window.showScreen("screen-menu1");
+  });
+
+  window.chooseMode1 = function(m) {
+    state.playMode = m;
+    if (m === "single") {
+      state.role = "host";
+      state.myPlayerId = 1;
+      window.showScreen("screen-menu2");
+    } else {
+      window.showScreen("screen-multi-role");
+    }
+  };
+
+  window.makeHostRoom = function() {
+    state.role = "host";
+    state.myPlayerId = 1;
+    var cnt = parseInt(document.getElementById("select-players").value, 10) || 3;
+    state.playerCount = Math.min(3, Math.max(2, cnt));
+    var pass = String(Math.floor(1000 + Math.random() * 9000));
+    state.roomPass = pass;
+    document.getElementById("room-pass-text").textContent = pass;
+    document.getElementById("host-wait-label").textContent = "接続まち... (1/" + state.playerCount + "人)";
+    initPeerAsHost(pass);
+    window.showScreen("screen-host-wait");
+  };
+
+  window.connectGuest = function() {
+    var p = document.getElementById("input-pass").value;
+    if (!/^\d{4}$/.test(p)) {
+      alert("4桁の数字を入力してください");
+      return;
+    }
+    state.role = "guest";
+    state.myPlayerId = 2;
+    state.roomPass = p;
+    document.getElementById("guest-wait-msg").textContent = "接続処理中...";
+    initPeerAsGuest(p, function(statusText) {
+      document.getElementById("guest-wait-msg").textContent = statusText;
+    });
+    window.showScreen("screen-guest-wait");
+  };
+
+  window.chooseGameMode = function(gm) {
+    state.gameMode = gm;
+    if (gm === "anim") {
+      if (registeredStamps.length >= MAX_STAMPS) {
+        alert("アニメーションスタンプは最大" + MAX_STAMPS + "個まで登録できます。");
+      }
+      buildTransparentPalette();
+      window.showScreen("screen-transparent");
+    } else {
+      if (state.playMode === "single" && singleBgLibrary.length >= 3) {
+        alert("一人モードの背景登録は最大3個までです。既存データを上書き保存して作成できます。");
+      }
+      state.transparentColor = null;
+      startPaintSession();
+      window.showScreen("screen-draw");
+    }
+  };
+
+  function buildTransparentPalette() {
+    var grid = document.getElementById("trans-palette-grid");
+    grid.innerHTML = "";
+    for (var i = 0; i < colors250.length; i++) {
+      (function(hex) {
+        var cell = document.createElement("div");
+        cell.className = "trans-swatch";
+        cell.style.backgroundColor = hex;
+        cell.onclick = function() {
+          state.tempTransparentColor = hex;
+          document.getElementById("trans-big-box").style.backgroundColor = hex;
+          document.getElementById("trans-hex-label").textContent = hex.toUpperCase();
+          document.getElementById("modal-trans-confirm").classList.add("open");
+        };
+        grid.appendChild(cell);
+      })(colors250[i]);
+    }
+  }
+
+  window.confirmTrans = function(yes) {
+    document.getElementById("modal-trans-confirm").classList.remove("open");
+    if (yes && state.tempTransparentColor) {
+      state.transparentColor = state.tempTransparentColor;
+      startPaintSession();
+      window.showScreen("screen-draw");
+    } else {
+      state.tempTransparentColor = null;
+    }
+  };
+
+  /* ----------------------------
+     お絵描き・GUI
+  ---------------------------- */
+  var pCanvas = document.getElementById("paint-canvas");
+  var pCtx = pCanvas.getContext("2d");
+  var gCanvas = document.getElementById("grid-overlay-canvas");
+  var gCtx = gCanvas.getContext("2d");
+  var cBox = document.getElementById("canvas-box");
+
+  function getMaxFramesForMode() {
+    return state.gameMode === "bg" ? 3 : 10;
+  }
+
+  function setCanvasDimensions(w, h) {
+    state.canvasW = w;
+    state.canvasH = h;
+    pCanvas.width = w;
+    pCanvas.height = h;
+    pCanvas.style.width = w + "px";
+    pCanvas.style.height = h + "px";
+    gCanvas.width = w;
+    gCanvas.height = h;
+    gCanvas.style.width = w + "px";
+    gCanvas.style.height = h + "px";
+    cBox.style.width = w + "px";
+    cBox.style.height = h + "px";
+    drawGrid();
+  }
+
+  function startPaintSession() {
+    setCanvasDimensions(480, 300);
+    pCtx.fillStyle = "#ffffff";
+    pCtx.fillRect(0, 0, state.canvasW, state.canvasH);
+    var initImg = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    state.frames = [initImg];
+    state.frameIdx = 0;
+    state.undoList = [initImg];
+    state.redoList = [];
+    var maxF = getMaxFramesForMode();
+    document.getElementById("lbl-next-limit").textContent = "最大" + maxF + "枚";
+    refreshFrameLabel();
+    buildSidePalette();
+    fitDrawCanvas();
+  }
+
+  function buildSidePalette() {
+    var box = document.getElementById("side-palette");
+    box.innerHTML = "";
+    if (state.drawColor === state.transparentColor) {
+      for (var k = 0; k < colors250.length; k++) {
+        if (colors250[k] !== state.transparentColor) {
+          state.drawColor = colors250[k];
+          break;
+        }
+      }
+    }
+    for (var i = 0; i < colors250.length; i++) {
+      (function(hex) {
+        var chip = document.createElement("div");
+        chip.className = "p-chip";
+        chip.style.backgroundColor = hex;
+        if (hex === state.transparentColor) {
+          chip.className += " blocked-chip";
+        } else {
+          if (hex === state.drawColor) chip.className += " active-chip";
+          chip.onclick = function() {
+            state.drawColor = hex;
+            var all = box.querySelectorAll(".p-chip");
+            for (var j = 0; j < all.length; j++) all[j].classList.remove("active-chip");
+            chip.classList.add("active-chip");
+          };
+        }
+        box.appendChild(chip);
+      })(colors250[i]);
+    }
+  }
+
+  window.selectTool = function(t) {
+    var bar = document.getElementById("size-bar");
+    var same = (state.tool === t);
+    state.tool = t;
+
+    document.getElementById("btn-tool-pen").classList.toggle("selected", t === "pen");
+    document.getElementById("btn-tool-eraser").classList.toggle("selected", t === "eraser");
+    document.getElementById("btn-tool-fill").classList.toggle("selected", t === "fill");
+
+    if (same) {
+      if (bar.classList.contains("show")) {
+        bar.classList.remove("show");
+      } else {
+        fillSizeBar(t);
+        bar.classList.add("show");
+      }
+    } else {
+      bar.classList.remove("show");
+    }
+  };
+
+  function fillSizeBar(t) {
+    var bar = document.getElementById("size-bar");
+    bar.innerHTML = "";
+    if (t === "pen") {
+      [2, 4, 8, 16].forEach(function(sz) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "sz-choice" + (state.penSize === sz ? " active" : "");
+        b.textContent = sz + "px";
+        b.onclick = function() {
+          state.penSize = sz;
+          document.getElementById("lbl-pen").textContent = sz + "px";
+          bar.classList.remove("show");
+        };
+        bar.appendChild(b);
+      });
+    } else if (t === "eraser") {
+      [6, 12, 24, 40].forEach(function(sz) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "sz-choice" + (state.eraserSize === sz ? " active" : "");
+        b.textContent = sz + "px";
+        b.onclick = function() {
+          state.eraserSize = sz;
+          document.getElementById("lbl-eraser").textContent = sz + "px";
+          bar.classList.remove("show");
+        };
+        bar.appendChild(b);
+      });
+    } else if (t === "fill") {
+      [{n:"厳密", v:5}, {n:"標準", v:25}, {n:"広め", v:60}].forEach(function(o) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "sz-choice" + (state.fillTol === o.v ? " active" : "");
+        b.textContent = o.n;
+        b.onclick = function() {
+          state.fillTol = o.v;
+          document.getElementById("lbl-fill").textContent = o.n;
+          bar.classList.remove("show");
+        };
+        bar.appendChild(b);
+      });
+    }
+  }
+
+  function drawGrid() {
+    var w = state.canvasW;
+    var h = state.canvasH;
+    var step = 60;
+    gCtx.clearRect(0, 0, w, h);
+    gCtx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+    gCtx.lineWidth = 1;
+    gCtx.setLineDash([4, 4]);
+    for (var x = step; x < w; x += step) {
+      gCtx.beginPath();
+      gCtx.moveTo(x, 0);
+      gCtx.lineTo(x, h);
+      gCtx.stroke();
+    }
+    for (var y = step; y < h; y += step) {
+      gCtx.beginPath();
+      gCtx.moveTo(0, y);
+      gCtx.lineTo(w, y);
+      gCtx.stroke();
+    }
+  }
+
+  window.toggleGrid = function() {
+    state.gridOn = !state.gridOn;
+    gCanvas.style.display = state.gridOn ? "block" : "none";
+    document.getElementById("btn-tool-grid").classList.toggle("selected", state.gridOn);
+  };
+
+  function pushUndo() {
+    var snap = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    state.undoList.push(snap);
+    if (state.undoList.length > 25) state.undoList.shift();
+    state.redoList = [];
+    state.frames[state.frameIdx] = snap;
+  }
+
+  window.doUndo = function() {
+    if (state.undoList.length <= 1) return;
+    var cur = state.undoList.pop();
+    state.redoList.push(cur);
+    var prev = state.undoList[state.undoList.length - 1];
+    pCtx.putImageData(prev, 0, 0);
+    state.frames[state.frameIdx] = prev;
+  };
+
+  window.doRedo = function() {
+    if (state.redoList.length === 0) return;
+    var nxt = state.redoList.pop();
+    state.undoList.push(nxt);
+    pCtx.putImageData(nxt, 0, 0);
+    state.frames[state.frameIdx] = nxt;
+  };
+
+  /* ----------------------------
+     フィット＆ピンチズーム＆描画
+  ---------------------------- */
+  var cArea = document.getElementById("canvas-area");
+  var fitScale = 1;
+  var userScale = 1;
+  var drawing = false;
+  var lx = 0, ly = 0;
+  var pinchStartDist = 0;
+  var pinchStartScale = 1;
+
+  function fitDrawCanvas() {
+    var aw = cArea.clientWidth - 12;
+    var ah = cArea.clientHeight - 12;
+    if (aw <= 0 || ah <= 0) return;
+    fitScale = Math.min(aw / state.canvasW, ah / state.canvasH, 1.5);
+    window.resetCanvasView();
+  }
+
+  function applyCanvasScale() {
+    cBox.style.transform = "scale(" + (fitScale * userScale) + ")";
+  }
+
+  window.resetCanvasView = function() {
+    userScale = 1;
+    applyCanvasScale();
+  };
+
+  function toLocalXY(cx, cy) {
+    var r = pCanvas.getBoundingClientRect();
+    return {
+      x: Math.floor((cx - r.left) * (state.canvasW / r.width)),
+      y: Math.floor((cy - r.top) * (state.canvasH / r.height))
     };
-    grid.appendChild(cell);
+  }
+
+  function strokeStart(x, y) {
+    if (x < 0 || x >= state.canvasW || y < 0 || y >= state.canvasH) return;
+    if (state.tool === "fill") {
+      floodFillCanvas(x, y, state.drawColor, state.fillTol);
+      pushUndo();
+      return;
+    }
+    drawing = true;
+    lx = x;
+    ly = y;
+    paintPoint(x, y);
+  }
+
+  function strokeMove(x, y) {
+    if (!drawing) return;
+    pCtx.lineCap = "round";
+    pCtx.lineJoin = "round";
+    if (state.tool === "pen") {
+      pCtx.globalCompositeOperation = "source-over";
+      pCtx.strokeStyle = state.drawColor;
+      pCtx.lineWidth = state.penSize;
+    } else if (state.tool === "eraser") {
+      pCtx.globalCompositeOperation = "source-over";
+      pCtx.strokeStyle = "#ffffff";
+      pCtx.lineWidth = state.eraserSize;
+    }
+    pCtx.beginPath();
+    pCtx.moveTo(lx, ly);
+    pCtx.lineTo(x, y);
+    pCtx.stroke();
+    lx = x;
+    ly = y;
+  }
+
+  function paintPoint(x, y) {
+    if (state.tool === "pen") {
+      pCtx.globalCompositeOperation = "source-over";
+      pCtx.fillStyle = state.drawColor;
+      pCtx.beginPath();
+      pCtx.arc(x, y, state.penSize / 2, 0, Math.PI * 2);
+      pCtx.fill();
+    } else if (state.tool === "eraser") {
+      pCtx.globalCompositeOperation = "source-over";
+      pCtx.fillStyle = "#ffffff";
+      pCtx.beginPath();
+      pCtx.arc(x, y, state.eraserSize / 2, 0, Math.PI * 2);
+      pCtx.fill();
+    }
+  }
+
+  function strokeEnd() {
+    drawing = false;
+    pCtx.globalCompositeOperation = "source-over";
+    pushUndo();
+  }
+
+  cArea.addEventListener("touchstart", function(e) {
+    if (e.touches.length === 2) {
+      drawing = false;
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchStartDist = Math.sqrt(dx * dx + dy * dy);
+      pinchStartScale = userScale;
+    } else if (e.touches.length === 1) {
+      var pt = toLocalXY(e.touches[0].clientX, e.touches[0].clientY);
+      strokeStart(pt.x, pt.y);
+    }
+  }, { passive: false });
+
+  cArea.addEventListener("touchmove", function(e) {
+    e.preventDefault();
+    if (e.touches.length === 2 && pinchStartDist > 0) {
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      userScale = Math.min(Math.max(0.6, pinchStartScale * (d / pinchStartDist)), 4);
+      applyCanvasScale();
+    } else if (e.touches.length === 1 && drawing) {
+      var pt = toLocalXY(e.touches[0].clientX, e.touches[0].clientY);
+      strokeMove(pt.x, pt.y);
+    }
+  }, { passive: false });
+
+  cArea.addEventListener("touchend", function(e) {
+    if (e.touches.length < 2) pinchStartDist = 0;
+    if (drawing) strokeEnd();
   });
-}
 
-/* ==========================================
-   3. お絵描きエンジン＆ツール制御
-========================================== */
-const canvas = document.getElementById('draw-canvas');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const gridCanvas = document.getElementById('grid-canvas');
-const gridCtx = gridCanvas.getContext('2d');
-
-function initDrawingSession() {
-  ctx.clearRect(0, 0, 480, 300);
-  // 背景モードの場合は白で初期化
-  if (gameState.gameMode === 'bg') {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 480, 300);
-  }
-  gameState.frames = [ctx.getImageData(0, 0, 480, 300)];
-  gameState.currentFrameIndex = 0;
-  gameState.history = [ctx.getImageData(0, 0, 480, 300)];
-  gameState.redoStack = [];
-  updateFrameUI();
-  renderGuiPalette();
-  drawGridLines();
-  resetZoom();
-}
-
-function renderGuiPalette() {
-  const container = document.getElementById('gui-palette-container');
-  container.innerHTML = '';
-  // 初期選択色が透明色と被っていたら別の色にする
-  if (gameState.currentColor === gameState.transparentColor) {
-    gameState.currentColor = PALETTE_250.find(c => c !== gameState.transparentColor);
-  }
-
-  PALETTE_250.forEach(hex => {
-    const div = document.createElement('div');
-    div.className = 'gui-color';
-    div.style.backgroundColor = hex;
-    if (hex === gameState.transparentColor) {
-      div.classList.add('disabled-transparent');
-    } else {
-      if (hex === gameState.currentColor) div.classList.add('selected');
-      div.onclick = () => {
-        gameState.currentColor = hex;
-        document.querySelectorAll('.gui-color').forEach(el => el.classList.remove('selected'));
-        div.classList.add('selected');
-      };
-    }
-    container.appendChild(div);
+  pCanvas.addEventListener("mousedown", function(e) {
+    var pt = toLocalXY(e.clientX, e.clientY);
+    strokeStart(pt.x, pt.y);
   });
-}
+  window.addEventListener("mousemove", function(e) {
+    if (!drawing) return;
+    var pt = toLocalXY(e.clientX, e.clientY);
+    strokeMove(pt.x, pt.y);
+  });
+  window.addEventListener("mouseup", function() {
+    if (drawing) strokeEnd();
+  });
+  cArea.addEventListener("wheel", function(e) {
+    e.preventDefault();
+    userScale = Math.min(Math.max(0.6, userScale - e.deltaY * 0.001), 4);
+    applyCanvasScale();
+  }, { passive: false });
 
-// ツール選択＆再タップ時の太さ・設定ポップアップ
-function handleToolClick(tool) {
-  const popup = document.getElementById('brush-size-popup');
-  const isSameTool = (gameState.currentTool === tool);
+  function floodFillCanvas(sx, sy, hex, tol) {
+    var w = state.canvasW;
+    var h = state.canvasH;
+    var img = pCtx.getImageData(0, 0, w, h);
+    var d = img.data;
+    var sp = (sy * w + sx) * 4;
+    var sr = d[sp], sg = d[sp + 1], sb = d[sp + 2], sa = d[sp + 3];
+    var fr = parseInt(hex.slice(1, 3), 16);
+    var fg = parseInt(hex.slice(3, 5), 16);
+    var fb = parseInt(hex.slice(5, 7), 16);
+    if (sr === fr && sg === fg && sb === fb && sa === 255) return;
 
-  gameState.currentTool = tool;
-  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tool-' + tool).classList.add('active');
-  if (gameState.gridVisible) document.getElementById('tool-grid').classList.add('active');
+    var seen = new Uint8Array(w * h);
+    var stack = [[sx, sy]];
+    while (stack.length > 0) {
+      var cur = stack.pop();
+      var x = cur[0], y = cur[1];
+      var idx = y * w + x;
+      if (seen[idx]) continue;
+      seen[idx] = 1;
+      var pos = idx * 4;
+      var diff = Math.abs(d[pos] - sr) + Math.abs(d[pos + 1] - sg) + Math.abs(d[pos + 2] - sb) + Math.abs(d[pos + 3] - sa);
+      if (diff <= tol) {
+        d[pos] = fr;
+        d[pos + 1] = fg;
+        d[pos + 2] = fb;
+        d[pos + 3] = 255;
+        if (x > 0) stack.push([x - 1, y]);
+        if (x < w - 1) stack.push([x + 1, y]);
+        if (y > 0) stack.push([x, y - 1]);
+        if (y < h - 1) stack.push([x, y + 1]);
+      }
+    }
+    pCtx.putImageData(img, 0, 0);
+  }
 
-  if (isSameTool) {
-    // 決定状態で再タップされたらオプション表示切替
-    if (popup.classList.contains('show')) {
-      popup.classList.remove('show');
+  /* ----------------------------
+     枚数管理・プレビュー・スクロール・保存
+  ---------------------------- */
+  function refreshFrameLabel() {
+    var maxF = getMaxFramesForMode();
+    document.getElementById("frame-info").textContent = (state.frameIdx + 1) + "枚目 (全" + state.frames.length + "枚 / 最大" + maxF + "枚)";
+    document.getElementById("btn-next-page").disabled = (state.frameIdx >= maxF - 1);
+  }
+
+  window.goNextFrame = function() {
+    var maxF = getMaxFramesForMode();
+    if (state.frameIdx >= maxF - 1) return;
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    state.frameIdx++;
+    if (state.frames[state.frameIdx]) {
+      pCtx.putImageData(state.frames[state.frameIdx], 0, 0);
     } else {
-      renderToolOptions(tool);
-      popup.classList.add('show');
+      pCtx.fillStyle = "#ffffff";
+      pCtx.fillRect(0, 0, state.canvasW, state.canvasH);
+      state.frames.push(pCtx.getImageData(0, 0, state.canvasW, state.canvasH));
     }
-  } else {
-    popup.classList.remove('show');
-  }
-}
-
-function renderToolOptions(tool) {
-  const popup = document.getElementById('brush-size-popup');
-  popup.innerHTML = '';
-  if (tool === 'pen') {
-    [2, 4, 8, 16].forEach(sz => {
-      const btn = document.createElement('div');
-      btn.className = 'size-dot-btn' + (gameState.penSize === sz ? ' selected' : '');
-      btn.innerHTML = `<div style="width:${sz}px;height:${sz}px;background:#fff;border-radius:50%;"></div>`;
-      btn.onclick = () => {
-        gameState.penSize = sz;
-        document.getElementById('badge-pen').textContent = sz + 'px';
-        popup.classList.remove('show');
-      };
-      popup.appendChild(btn);
-    });
-  } else if (tool === 'eraser') {
-    [6, 12, 24, 40].forEach(sz => {
-      const btn = document.createElement('div');
-      btn.className = 'size-dot-btn' + (gameState.eraserSize === sz ? ' selected' : '');
-      btn.style.fontSize = '10px';
-      btn.textContent = sz;
-      btn.onclick = () => {
-        gameState.eraserSize = sz;
-        document.getElementById('badge-eraser').textContent = sz + 'px';
-        popup.classList.remove('show');
-      };
-      popup.appendChild(btn);
-    });
-  } else if (tool === 'bucket') {
-    [{label:'厳密', val:5}, {label:'標準', val:25}, {label:'広め', val:60}].forEach(opt => {
-      const btn = document.createElement('button');
-      btn.style.cssText = 'background:#555;color:#fff;border:1px solid #fff;border-radius:6px;padding:4px 8px;font-size:12px;';
-      btn.textContent = opt.label;
-      btn.onclick = () => {
-        gameState.bucketTolerance = opt.val;
-        document.getElementById('badge-bucket').textContent = opt.label;
-        popup.classList.remove('show');
-      };
-      popup.appendChild(btn);
-    });
-  }
-}
-
-// グリッド（縦72px × 横60px）
-function drawGridLines() {
-  gridCtx.clearRect(0, 0, 480, 300);
-  gridCtx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-  gridCtx.lineWidth = 1;
-  gridCtx.setLineDash([3, 3]);
-
-  // 横60px間隔（縦線）
-  for (let x = 60; x < 480; x += 60) {
-    gridCtx.beginPath();
-    gridCtx.moveTo(x, 0);
-    gridCtx.lineTo(x, 300);
-    gridCtx.stroke();
-  }
-  // 縦72px間隔（横線）
-  for (let y = 72; y < 300; y += 72) {
-    gridCtx.beginPath();
-    gridCtx.moveTo(0, y);
-    gridCtx.lineTo(480, y);
-    gridCtx.stroke();
-  }
-}
-
-function toggleGrid() {
-  gameState.gridVisible = !gameState.gridVisible;
-  gridCanvas.style.display = gameState.gridVisible ? 'block' : 'none';
-  document.getElementById('tool-grid').classList.toggle('active', gameState.gridVisible);
-}
-
-// Undo / Redo
-function saveHistoryState() {
-  const snap = ctx.getImageData(0, 0, 480, 300);
-  gameState.history.push(snap);
-  if (gameState.history.length > 30) gameState.history.shift();
-  gameState.redoStack = [];
-  gameState.frames[gameState.currentFrameIndex] = snap;
-}
-
-function undo() {
-  if (gameState.history.length <= 1) return;
-  const current = gameState.history.pop();
-  gameState.redoStack.push(current);
-  const prev = gameState.history[gameState.history.length - 1];
-  ctx.putImageData(prev, 0, 0);
-  gameState.frames[gameState.currentFrameIndex] = prev;
-}
-
-function redo() {
-  if (gameState.redoStack.length === 0) return;
-  const next = gameState.redoStack.pop();
-  gameState.history.push(next);
-  ctx.putImageData(next, 0, 0);
-  gameState.frames[gameState.currentFrameIndex] = next;
-}
-
-/* ==========================================
-   4. 描画処理＆ピンチズーム操作
-========================================== */
-const viewport = document.getElementById('canvas-viewport');
-const wrapper = document.getElementById('canvas-wrapper');
-let scale = 1, panX = 0, panY = 0;
-let isDrawing = false;
-let lastX = 0, lastY = 0;
-
-// マルチタッチピンチ用
-let initialPinchDist = null;
-let initialScale = 1;
-
-function updateTransform() {
-  wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-}
-
-function resetZoom() {
-  scale = 1;
-  panX = 0;
-  panY = 0;
-  updateTransform();
-}
-
-function getCanvasCoords(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  const x = (clientX - rect.left) * (480 / rect.width);
-  const y = (clientY - rect.top) * (300 / rect.height);
-  return { x: Math.floor(x), y: Math.floor(y) };
-}
-
-// タッチイベント（1本指＝描画、2本指＝ピンチズーム）
-viewport.addEventListener('touchstart', e => {
-  if (e.touches.length === 2) {
-    isDrawing = false;
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    initialPinchDist = Math.hypot(dx, dy);
-    initialScale = scale;
-  } else if (e.touches.length === 1) {
-    const pt = getCanvasCoords(e.touches[0].clientX, e.touches[0].clientY);
-    startStroke(pt.x, pt.y);
-  }
-}, { passive: false });
-
-viewport.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (e.touches.length === 2 && initialPinchDist) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.hypot(dx, dy);
-    scale = Math.min(Math.max(0.5, initialScale * (dist / initialPinchDist)), 4);
-    updateTransform();
-  } else if (e.touches.length === 1 && isDrawing) {
-    const pt = getCanvasCoords(e.touches[0].clientX, e.touches[0].clientY);
-    moveStroke(pt.x, pt.y);
-  }
-}, { passive: false });
-
-viewport.addEventListener('touchend', e => {
-  if (e.touches.length < 2) initialPinchDist = null;
-  if (isDrawing) endStroke();
-});
-
-// マウスイベント（PC用）
-canvas.addEventListener('mousedown', e => {
-  const pt = getCanvasCoords(e.clientX, e.clientY);
-  startStroke(pt.x, pt.y);
-});
-window.addEventListener('mousemove', e => {
-  if (!isDrawing) return;
-  const pt = getCanvasCoords(e.clientX, e.clientY);
-  moveStroke(pt.x, pt.y);
-});
-window.addEventListener('mouseup', () => {
-  if (isDrawing) endStroke();
-});
-viewport.addEventListener('wheel', e => {
-  e.preventDefault();
-  scale = Math.min(Math.max(0.5, scale - e.deltaY * 0.001), 4);
-  updateTransform();
-}, { passive: false });
-
-function startStroke(x, y) {
-  if (x < 0 || x >= 480 || y < 0 || y >= 300) return;
-  if (gameState.currentTool === 'bucket') {
-    floodFill(x, y, gameState.currentColor, gameState.bucketTolerance);
-    saveHistoryState();
-    return;
-  }
-  isDrawing = true;
-  lastX = x;
-  lastY = y;
-  drawDot(x, y);
-}
-
-function moveStroke(x, y) {
-  if (!isDrawing) return;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  if (gameState.currentTool === 'pen') {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = gameState.currentColor;
-    ctx.lineWidth = gameState.penSize;
-  } else if (gameState.currentTool === 'eraser') {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = gameState.eraserSize;
-  }
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.stroke();
-  lastX = x;
-  lastY = y;
-}
-
-function drawDot(x, y) {
-  if (gameState.currentTool === 'pen') {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = gameState.currentColor;
-    ctx.beginPath();
-    ctx.arc(x, y, gameState.penSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (gameState.currentTool === 'eraser') {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, gameState.eraserSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function endStroke() {
-  isDrawing = false;
-  ctx.globalCompositeOperation = 'source-over';
-  saveHistoryState();
-}
-
-// 塗りつぶしアルゴリズム
-function floodFill(startX, startY, fillHex, tolerance) {
-  const imgData = ctx.getImageData(0, 0, 480, 300);
-  const data = imgData.data;
-  const startPos = (startY * 480 + startX) * 4;
-  const sr = data[startPos], sg = data[startPos + 1], sb = data[startPos + 2], sa = data[startPos + 3];
-
-  const fr = parseInt(fillHex.slice(1, 3), 16);
-  const fg = parseInt(fillHex.slice(3, 5), 16);
-  const fb = parseInt(fillHex.slice(5, 7), 16);
-
-  if (sr === fr && sg === fg && sb === fb && sa === 255) return;
-
-  const visited = new Uint8Array(480 * 300);
-  const stack = [[startX, startY]];
-
-  while (stack.length > 0) {
-    const [x, y] = stack.pop();
-    const idx = y * 480 + x;
-    if (visited[idx]) continue;
-    visited[idx] = 1;
-
-    const pos = idx * 4;
-    const diff = Math.abs(data[pos] - sr) + Math.abs(data[pos+1] - sg) + Math.abs(data[pos+2] - sb) + Math.abs(data[pos+3] - sa);
-    if (diff <= tolerance) {
-      data[pos] = fr;
-      data[pos + 1] = fg;
-      data[pos + 2] = fb;
-      data[pos + 3] = 255;
-
-      if (x > 0) stack.push([x - 1, y]);
-      if (x < 479) stack.push([x + 1, y]);
-      if (y > 0) stack.push([x, y - 1]);
-      if (y < 299) stack.push([x, y + 1]);
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-}
-
-/* ==========================================
-   5. フレーム進行（最大10枚）・保存・GIF書き出し
-========================================== */
-function updateFrameUI() {
-  const current = gameState.currentFrameIndex + 1;
-  const total = gameState.frames.length;
-  document.getElementById('frame-badge').textContent = `${current}枚目 (全${total}枚 / 最大10枚)`;
-  document.getElementById('btn-next-frame').disabled = (current >= 10);
-}
-
-function nextFrame() {
-  if (gameState.currentFrameIndex >= 9) return;
-  // 現在のフレームを保存
-  gameState.frames[gameState.currentFrameIndex] = ctx.getImageData(0, 0, 480, 300);
-  gameState.currentFrameIndex++;
-
-  if (gameState.frames[gameState.currentFrameIndex]) {
-    ctx.putImageData(gameState.frames[gameState.currentFrameIndex], 0, 0);
-  } else {
-    // 前の絵を薄く残さず新規キャンバス（背景モードなら白）
-    ctx.clearRect(0, 0, 480, 300);
-    if (gameState.gameMode === 'bg') {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 480, 300);
-    }
-    gameState.frames.push(ctx.getImageData(0, 0, 480, 300));
-  }
-  gameState.history = [ctx.getImageData(0, 0, 480, 300)];
-  gameState.redoStack = [];
-  updateFrameUI();
-}
-
-// PNG保存
-function saveCurrentPNG() {
-  const link = document.createElement('a');
-  link.download = `wing_art_frame${gameState.currentFrameIndex + 1}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-  openAfterSaveDialog();
-}
-
-// 完了プレビュー
-let previewTimer = null;
-let previewIndex = 0;
-let previewSpeed = 200;
-
-function openPreview() {
-  gameState.frames[gameState.currentFrameIndex] = ctx.getImageData(0, 0, 480, 300);
-  previewIndex = 0;
-  document.getElementById('modal-preview').classList.add('active');
-  startPreviewLoop();
-}
-
-function closePreview() {
-  clearInterval(previewTimer);
-  document.getElementById('modal-preview').classList.remove('active');
-}
-
-function updateAnimSpeed(val) {
-  previewSpeed = Number(val);
-  document.getElementById('speed-label').textContent = val;
-  startPreviewLoop();
-}
-
-function startPreviewLoop() {
-  clearInterval(previewTimer);
-  const pCanvas = document.getElementById('preview-canvas');
-  const pCtx = pCanvas.getContext('2d');
-
-  const drawStep = () => {
-    pCtx.clearRect(0, 0, 480, 300);
-    pCtx.putImageData(gameState.frames[previewIndex], 0, 0);
-    previewIndex = (previewIndex + 1) % gameState.frames.length;
+    state.undoList = [pCtx.getImageData(0, 0, state.canvasW, state.canvasH)];
+    state.redoList = [];
+    refreshFrameLabel();
   };
-  drawStep();
-  previewTimer = setInterval(drawStep, previewSpeed);
-}
 
-// アニメーションGIF書き出し
-async function exportGIF() {
-  const btn = document.getElementById('btn-save-gif');
-  btn.disabled = true;
-  btn.textContent = 'GIF生成中...';
+  window.savePNG = function() {
+    var a = document.createElement("a");
+    a.download = "wing_frame_" + (state.frameIdx + 1) + ".png";
+    a.href = pCanvas.toDataURL("image/png");
+    a.click();
+    document.getElementById("modal-saved-dialog").classList.add("open");
+  };
 
-  // CORS制限回避のためWorkerをBlob生成
-  const workerBlob = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js')
-    .then(res => res.text())
-    .then(txt => new Blob([txt], { type: 'application/javascript' }));
-  const workerUrl = URL.createObjectURL(workerBlob);
+  window.onDrawDoneClicked = function() {
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    if (state.gameMode === "bg" && state.frames.length < 1) {
+      alert("背景は1枚以上描いてから完了を押してください。");
+      return;
+    }
+    openAnimPreview();
+  };
 
-  // 透明色のRGB値取得
-  let transHexInt = null;
-  if (gameState.transparentColor) {
-    transHexInt = parseInt(gameState.transparentColor.slice(1), 16);
+  var timerId = null;
+  var playIdx = 0;
+  var playMs = 200;
+  var scrollOffset = 0;
+
+  var croppingActive = false;
+  var cropRatio = 0.65;
+  var cropPinchDist = 0;
+  var cropPinchRatio = 0.65;
+
+  function syncPreviewCanvasSize() {
+    var pv = document.getElementById("preview-stage");
+    pv.width = state.canvasW;
+    pv.height = state.canvasH;
+    document.getElementById("preview-crop-area").style.aspectRatio = state.canvasW + " / " + state.canvasH;
   }
 
-  const gif = new GIF({
-    workers: 2,
-    quality: 10,
-    width: 480,
-    height: 300,
-    workerScript: workerUrl,
-    transparent: transHexInt
-  });
+  window.openAnimPreview = function() {
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    syncPreviewCanvasSize();
+    cancelCropSize();
+    playIdx = 0;
+    scrollOffset = 0;
 
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = 480;
-  tempCanvas.height = 300;
-  const tempCtx = tempCanvas.getContext('2d');
+    var isBg = (state.gameMode === "bg");
+    document.getElementById("preview-modal-title").textContent = isBg
+      ? "背景アニメーションプレビュー"
+      : "アニメーションプレビュー";
+    document.getElementById("bg-anim-options").style.display = isBg ? "block" : "none";
+    document.getElementById("btn-pv-crop").style.display = isBg ? "none" : "inline-block";
+    document.getElementById("btn-pv-stamp").style.display = isBg ? "none" : "inline-block";
+    document.getElementById("btn-pv-gif").style.display = isBg ? "inline-block" : "none";
 
-  gameState.frames.forEach(frameData => {
-    tempCtx.clearRect(0, 0, 480, 300);
-    // 透明色が指定されている場合、完全透明ピクセルを指定色で埋めてGIF透過させる
-    if (gameState.transparentColor) {
-      tempCtx.fillStyle = gameState.transparentColor;
-      tempCtx.fillRect(0, 0, 480, 300);
-      const off = document.createElement('canvas');
-      off.width = 480; off.height = 300;
-      off.getContext('2d').putImageData(frameData, 0, 0);
-      tempCtx.drawImage(off, 0, 0);
-    } else {
-      tempCtx.putImageData(frameData, 0, 0);
+    if (isBg) {
+      window.setBgCondition(state.bgCondition);
+      window.setBgDirection(state.bgDirection);
     }
-    gif.addFrame(tempCtx, { copy: true, delay: previewSpeed });
+
+    document.getElementById("modal-preview").classList.add("open");
+    runPreviewLoop();
+  };
+
+  window.setBgCondition = function(cond) {
+    state.bgCondition = cond;
+    document.getElementById("bg-cond-seq").classList.toggle("active", cond === "sequence");
+    document.getElementById("bg-cond-h").classList.toggle("active", cond === "horizontal");
+    document.getElementById("bg-cond-v").classList.toggle("active", cond === "vertical");
+    document.getElementById("bg-dir-row").style.display = (cond === "sequence") ? "none" : "flex";
+    scrollOffset = 0;
+  };
+
+  window.setBgDirection = function(dir) {
+    state.bgDirection = dir;
+    document.getElementById("bg-dir-1").classList.toggle("active", dir === "pos");
+    document.getElementById("bg-dir-2").classList.toggle("active", dir === "neg");
+  };
+
+  window.closeAnimPreview = function() {
+    cancelCropSize();
+    if (timerId) clearInterval(timerId);
+    document.getElementById("modal-preview").classList.remove("open");
+  };
+
+  window.changeSpeed = function(v) {
+    playMs = parseInt(v, 10) || 200;
+    document.getElementById("speed-val").textContent = playMs;
+    runPreviewLoop();
+  };
+
+  function buildFrameCanvases(framesArr, w, h) {
+    return framesArr.map(function(fd) {
+      var c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      c.getContext("2d").putImageData(fd, 0, 0);
+      return c;
+    });
+  }
+
+  function renderConnectedScroll(ctx, frameCanvases, w, h, cond, dir, offsetPx) {
+    var n = frameCanvases.length;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    if (n === 0) return;
+    if (n === 1) {
+      ctx.drawImage(frameCanvases[0], 0, 0);
+      return;
+    }
+    if (cond === "horizontal") {
+      var totalW = w * n;
+      var mod = ((offsetPx % totalW) + totalW) % totalW;
+      var shift = (dir === "pos") ? mod : (totalW - mod);
+      for (var k = -1; k <= n; k++) {
+        var idx = ((k % n) + n) % n;
+        var dx = k * w + shift - totalW;
+        if (dx + w >= -w && dx <= w * 2) {
+          ctx.drawImage(frameCanvases[idx], dx, 0);
+        }
+      }
+    } else if (cond === "vertical") {
+      var totalH = h * n;
+      var modV = ((offsetPx % totalH) + totalH) % totalH;
+      var shiftV = (dir === "pos") ? modV : (totalH - modV);
+      for (var m = -1; m <= n; m++) {
+        var idxV = ((m % n) + n) % n;
+        var dy = m * h + shiftV - totalH;
+        if (dy + h >= -h && dy <= h * 2) {
+          ctx.drawImage(frameCanvases[idxV], 0, dy);
+        }
+      }
+    }
+  }
+
+  function runPreviewLoop() {
+    if (timerId) clearInterval(timerId);
+    var pv = document.getElementById("preview-stage");
+    var pc = pv.getContext("2d");
+    var fCanvases = buildFrameCanvases(state.frames, state.canvasW, state.canvasH);
+    var intervalMs = (state.gameMode === "bg" && state.bgCondition !== "sequence") ? 40 : playMs;
+
+    function step() {
+      if (state.gameMode === "bg" && state.bgCondition !== "sequence") {
+        var stepSpeed = Math.max(2, Math.round((1200 - playMs) / 90));
+        scrollOffset += stepSpeed;
+        renderConnectedScroll(pc, fCanvases, pv.width, pv.height, state.bgCondition, state.bgDirection, scrollOffset);
+      } else {
+        pc.clearRect(0, 0, pv.width, pv.height);
+        if (state.frames[playIdx]) {
+          pc.putImageData(state.frames[playIdx], 0, 0);
+        }
+        playIdx = (playIdx + 1) % state.frames.length;
+      }
+    }
+    step();
+    timerId = setInterval(step, intervalMs);
+  }
+
+  window.startCropSizeMode = function() {
+    croppingActive = true;
+    cropRatio = 0.65;
+    updateCropRectVisual();
+    document.getElementById("crop-confirm-bar").classList.add("active");
+  };
+
+  function updateCropRectVisual() {
+    var rectEl = document.getElementById("crop-dashed-rect");
+    rectEl.classList.add("active");
+    var wPct = cropRatio * 100;
+    var hPct = cropRatio * 100;
+    rectEl.style.width = wPct + "%";
+    rectEl.style.height = hPct + "%";
+    rectEl.style.left = ((100 - wPct) / 2) + "%";
+    rectEl.style.top = ((100 - hPct) / 2) + "%";
+  }
+
+  window.cancelCropSize = function() {
+    croppingActive = false;
+    document.getElementById("crop-dashed-rect").classList.remove("active");
+    document.getElementById("crop-confirm-bar").classList.remove("active");
+  };
+
+  var cropAreaEl = document.getElementById("preview-crop-area");
+  cropAreaEl.addEventListener("touchstart", function(e) {
+    if (!croppingActive) return;
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      cropPinchDist = Math.sqrt(dx * dx + dy * dy);
+      cropPinchRatio = cropRatio;
+    }
+  }, { passive: false });
+
+  cropAreaEl.addEventListener("touchmove", function(e) {
+    if (!croppingActive) return;
+    if (e.touches.length === 2 && cropPinchDist > 0) {
+      e.preventDefault();
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      cropRatio = Math.min(Math.max(0.25, cropPinchRatio * (d / cropPinchDist)), 1.0);
+      updateCropRectVisual();
+    }
+  }, { passive: false });
+
+  cropAreaEl.addEventListener("touchend", function(e) {
+    if (e.touches.length < 2) cropPinchDist = 0;
   });
 
-  gif.on('finished', blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+  cropAreaEl.addEventListener("wheel", function(e) {
+    if (!croppingActive) return;
+    e.preventDefault();
+    cropRatio = Math.min(Math.max(0.25, cropRatio - e.deltaY * 0.001), 1.0);
+    updateCropRectVisual();
+  }, { passive: false });
+
+  window.applyCropSize = function() {
+    if (!croppingActive) return;
+    var oldW = state.canvasW;
+    var oldH = state.canvasH;
+    var newW = Math.max(24, Math.round(oldW * cropRatio));
+    var newH = Math.max(24, Math.round(oldH * cropRatio));
+    var sx = Math.floor((oldW - newW) / 2);
+    var sy = Math.floor((oldH - newH) / 2);
+
+    var srcCanvas = document.createElement("canvas");
+    srcCanvas.width = oldW;
+    srcCanvas.height = oldH;
+    var srcCtx = srcCanvas.getContext("2d");
+
+    var dstCanvas = document.createElement("canvas");
+    dstCanvas.width = newW;
+    dstCanvas.height = newH;
+    var dstCtx = dstCanvas.getContext("2d");
+
+    var croppedFrames = [];
+    for (var i = 0; i < state.frames.length; i++) {
+      srcCtx.clearRect(0, 0, oldW, oldH);
+      srcCtx.putImageData(state.frames[i], 0, 0);
+      dstCtx.fillStyle = "#ffffff";
+      dstCtx.fillRect(0, 0, newW, newH);
+      dstCtx.drawImage(srcCanvas, sx, sy, newW, newH, 0, 0, newW, newH);
+      croppedFrames.push(dstCtx.getImageData(0, 0, newW, newH));
+    }
+
+    state.frames = croppedFrames;
+    setCanvasDimensions(newW, newH);
+    syncPreviewCanvasSize();
+
+    var curFrame = state.frames[Math.min(state.frameIdx, state.frames.length - 1)] || state.frames[0];
+    state.frameIdx = Math.min(state.frameIdx, state.frames.length - 1);
+    pCtx.putImageData(curFrame, 0, 0);
+    state.undoList = [curFrame];
+    state.redoList = [];
+
+    cancelCropSize();
+    fitDrawCanvas();
+    runPreviewLoop();
+    alert("サイズを " + newW + "×" + newH + "px に変更しました！");
+  };
+
+  window.registerStamp = function() {
+    if (registeredStamps.length >= MAX_STAMPS) {
+      alert("スタンプ登録は最大" + MAX_STAMPS + "個までです。");
+      return;
+    }
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    var cloned = cloneImageDataList(state.frames);
+    var stampObj = {
+      id: "stamp_" + (registeredStamps.length + 1) + "_" + Date.now(),
+      name: "スタンプ" + (registeredStamps.length + 1) + " (P" + state.myPlayerId + ")",
+      ownerPlayerId: state.myPlayerId,
+      width: state.canvasW,
+      height: state.canvasH,
+      speed: playMs,
+      transparentColor: state.transparentColor,
+      frames: cloned
+    };
+    registeredStamps.push(stampObj);
+    updateMenu2Status();
+
+    safeSendPeer({
+      type: "stamp_share",
+      stamp: {
+        id: stampObj.id,
+        name: stampObj.name,
+        ownerPlayerId: stampObj.ownerPlayerId,
+        width: stampObj.width,
+        height: stampObj.height,
+        speed: stampObj.speed,
+        transparentColor: stampObj.transparentColor,
+        frames: cloned.map(function(fd) {
+          return { width: fd.width, height: fd.height, data: Array.from(fd.data) };
+        })
+      }
+    });
+
+    alert("「" + stampObj.name + "」を共有スタンプに登録しました！（" + registeredStamps.length + "/" + MAX_STAMPS + "個）");
+  };
+
+  function encodeSimpleAnimatedGif(frameCanvases, delayMs) {
+    var w = frameCanvases[0].width;
+    var h = frameCanvases[0].height;
+    var delayCs = Math.max(2, Math.round(delayMs / 10));
+    var out = [];
+
+    function pushStr(s) {
+      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i) & 0xff);
+    }
+    function push16(n) {
+      out.push(n & 0xff, (n >> 8) & 0xff);
+    }
+
+    pushStr("GIF89a");
+    push16(w);
+    push16(h);
+    out.push(0x80, 0x00, 0x00);
+    out.push(0x00, 0x00, 0x00);
+    out.push(0xff, 0xff, 0xff);
+    out.push(0x21, 0xff, 0x0b);
+    pushStr("NETSCAPE2.0");
+    out.push(0x03, 0x01);
+    push16(0);
+    out.push(0x00);
+
+    for (var f = 0; f < frameCanvases.length; f++) {
+      var img = frameCanvases[f].getContext("2d").getImageData(0, 0, w, h).data;
+      var indices = new Uint8Array(w * h);
+      for (var p = 0, idx = 0; p < img.length; p += 4, idx++) {
+        var lum = (img[p] + img[p + 1] + img[p + 2]) / 3;
+        indices[idx] = lum >= 128 ? 1 : 0;
+      }
+
+      out.push(0x21, 0xf9, 0x04, 0x04);
+      push16(delayCs);
+      out.push(0x00, 0x00);
+
+      out.push(0x2c);
+      push16(0); push16(0); push16(w); push16(h);
+      out.push(0x00);
+
+      var minCode = 2;
+      var clearCode = 1 << minCode;
+      var endCode = clearCode + 1;
+      var codeSize = minCode + 1;
+      out.push(minCode);
+
+      var bitBuf = 0;
+      var bitLen = 0;
+      var subBlock = [];
+
+      function flushSubBlocks() {
+        for (var i = 0; i < subBlock.length; i += 255) {
+          var chunk = subBlock.slice(i, i + 255);
+          out.push(chunk.length);
+          for (var j = 0; j < chunk.length; j++) out.push(chunk[j]);
+        }
+        subBlock = [];
+        out.push(0x00);
+      }
+
+      function writeCode(code, size) {
+        bitBuf |= (code << bitLen);
+        bitLen += size;
+        while (bitLen >= 8) {
+          subBlock.push(bitBuf & 0xff);
+          bitBuf >>= 8;
+          bitLen -= 8;
+        }
+      }
+
+      writeCode(clearCode, codeSize);
+      for (var i = 0; i < indices.length; i++) {
+        writeCode(indices[i] & 1, codeSize);
+        if (i > 0 && i % 240 === 0) {
+          writeCode(clearCode, codeSize);
+        }
+      }
+      writeCode(endCode, codeSize);
+      if (bitLen > 0) subBlock.push(bitBuf & 0xff);
+      flushSubBlocks();
+    }
+
+    out.push(0x3b);
+    return new Blob([new Uint8Array(out)], { type: "image/gif" });
+  }
+
+  window.saveBackgroundGIF = function() {
+    var fCanvases = buildFrameCanvases(state.frames, state.canvasW, state.canvasH);
+    var blob = encodeSimpleAnimatedGif(fCanvases, playMs);
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.download = "wing_bg_" + state.frames.length + "frames.gif";
     a.href = url;
-    a.download = 'wing_animation.gif';
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+    document.getElementById("modal-saved-dialog").classList.add("open");
+  };
+
+  window.savePreviewAsset = function() {
+    var w = state.canvasW;
+    var h = state.canvasH;
+    var n = state.frames.length;
+
+    if (state.gameMode === "bg") {
+      var joinedW = (state.bgCondition === "vertical") ? w : w * n;
+      var joinedH = (state.bgCondition === "vertical") ? h * n : h;
+      var joinedCanvas = document.createElement("canvas");
+      joinedCanvas.width = joinedW;
+      joinedCanvas.height = joinedH;
+      var jctx = joinedCanvas.getContext("2d");
+      jctx.fillStyle = "#ffffff";
+      jctx.fillRect(0, 0, joinedW, joinedH);
+
+      var tmp = document.createElement("canvas");
+      tmp.width = w;
+      tmp.height = h;
+      var tctx = tmp.getContext("2d");
+
+      for (var i = 0; i < n; i++) {
+        tctx.clearRect(0, 0, w, h);
+        tctx.putImageData(state.frames[i], 0, 0);
+        if (state.bgCondition === "vertical") {
+          jctx.drawImage(tmp, 0, i * h);
+        } else {
+          jctx.drawImage(tmp, i * w, 0);
+        }
+      }
+
+      var bgEntry = {
+        id: "bg_" + Date.now(),
+        label: (state.playMode === "single" ? "背景" + (singleBgLibrary.length + 1) : "P" + state.myPlayerId + "背景") + " (" + n + "枚)",
+        width: w,
+        height: h,
+        speed: playMs,
+        condition: state.bgCondition,
+        direction: state.bgDirection,
+        frames: cloneImageDataList(state.frames),
+        joinedDataUrl: joinedCanvas.toDataURL("image/png")
+      };
+
+      if (state.playMode === "single") {
+        if (singleBgLibrary.length < 3) {
+          singleBgLibrary.push(bgEntry);
+        } else {
+          singleBgLibrary[singleBgLibrary.length - 1] = bgEntry;
+        }
+      } else {
+        multiBgByPlayer[state.myPlayerId] = bgEntry;
+      }
+
+      var aBg = document.createElement("a");
+      aBg.download = "wing_bg_joined_" + joinedW + "x" + joinedH + ".png";
+      aBg.href = bgEntry.joinedDataUrl;
+      aBg.click();
+
+      updateMenu2Status();
+      window.closeAnimPreview();
+      document.getElementById("modal-saved-dialog").classList.add("open");
+      return;
+    }
+
+    var sheet = document.createElement("canvas");
+    sheet.width = w * n;
+    sheet.height = h;
+    var sctx = sheet.getContext("2d");
+    var tmpA = document.createElement("canvas");
+    tmpA.width = w;
+    tmpA.height = h;
+    var tctxA = tmpA.getContext("2d");
+
+    for (var k = 0; k < n; k++) {
+      tctxA.clearRect(0, 0, w, h);
+      tctxA.putImageData(state.frames[k], 0, 0);
+      sctx.drawImage(tmpA, k * w, 0);
+    }
+
+    var a = document.createElement("a");
+    a.download = "wing_anim_" + w + "x" + h + "_" + n + "frames.png";
+    a.href = sheet.toDataURL("image/png");
     a.click();
 
-    btn.disabled = false;
-    btn.textContent = '✨ アニメーションGIFで保存';
-    closePreview();
-    openAfterSaveDialog();
+    window.closeAnimPreview();
+    document.getElementById("modal-saved-dialog").classList.add("open");
+  };
+
+  window.afterSaveChoice = function(goTitle) {
+    document.getElementById("modal-saved-dialog").classList.remove("open");
+    if (goTitle) {
+      window.showScreen("screen-title");
+    }
+  };
+
+  /* ----------------------------
+     （３）PV（合体）モード：①ポケカラ用（縦3枠）
+  ---------------------------- */
+  var pokeSlotsData = [null, null, null];
+  var pokeScrollOn = true;
+  var pokeAxis = "v";
+  var pokeDir = "up";
+  var pokeOffset = 0;
+  var pokeTimer = null;
+
+  function getAvailableBgCandidates() {
+    var list = [];
+    if (state.playMode === "single") {
+      for (var i = 0; i < singleBgLibrary.length; i++) {
+        list.push({ title: singleBgLibrary[i].label, bg: singleBgLibrary[i] });
+      }
+    } else {
+      for (var p = 1; p <= state.playerCount; p++) {
+        if (multiBgByPlayer[p]) {
+          list.push({ title: "プレイヤー" + p + " (" + multiBgByPlayer[p].frames.length + "枚)", bg: multiBgByPlayer[p] });
+        }
+      }
+    }
+    return list;
+  }
+
+  function makeFallbackWhiteBg() {
+    var c = document.createElement("canvas");
+    c.width = 480;
+    c.height = 100;
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 480, 100);
+    return {
+      id: "blank",
+      label: "白背景",
+      width: 480,
+      height: 100,
+      speed: 200,
+      condition: "sequence",
+      direction: "pos",
+      frames: [ctx.getImageData(0, 0, 480, 100)]
+    };
+  }
+
+  window.openPvModeSelect = function() {
+    window.showScreen("screen-pv-select");
+  };
+
+  window.openPokeSetup = function() {
+    var box = document.getElementById("poke-slot-selectors");
+    var candidates = getAvailableBgCandidates();
+    if (candidates.length === 0) {
+      candidates.push({ title: "未登録（白背景）", bg: makeFallbackWhiteBg() });
+    }
+    var html = "";
+    for (var s = 0; s < 3; s++) {
+      html += "<div style='margin-bottom:6px;'><b>" + (s + 1) + "枠目:</b> ";
+      html += "<select id='poke-sel-" + s + "' class='count-select' style='width:185px;'>";
+      for (var c = 0; c < candidates.length; c++) {
+        var selAttr = (c === (s % candidates.length)) ? " selected" : "";
+        html += "<option value='" + c + "'" + selAttr + ">" + candidates[c].title + "</option>";
+      }
+      html += "</select></div>";
+    }
+    box.innerHTML = html;
+    window.showScreen("screen-poke-setup");
+  };
+
+  window.buildPokeVerticalPreview = function() {
+    var candidates = getAvailableBgCandidates();
+    if (candidates.length === 0) {
+      candidates.push({ title: "白背景", bg: makeFallbackWhiteBg() });
+    }
+    for (var s = 0; s < 3; s++) {
+      var idx = parseInt(document.getElementById("poke-sel-" + s).value, 10) || 0;
+      pokeSlotsData[s] = (candidates[idx] && candidates[idx].bg) ? candidates[idx].bg : makeFallbackWhiteBg();
+    }
+    pokeScrollOn = true;
+    pokeOffset = 0;
+    window.showScreen("screen-poke-preview");
+    startPokePreviewLoop();
+  };
+
+  window.togglePokeScroll = function() {
+    pokeScrollOn = !pokeScrollOn;
+    var btn = document.getElementById("poke-scroll-toggle");
+    btn.textContent = "スクロール: " + (pokeScrollOn ? "ON" : "OFF");
+    btn.classList.toggle("active", pokeScrollOn);
+  };
+
+  window.setPokeAxis = function(ax) {
+    pokeAxis = ax;
+    document.getElementById("poke-axis-v").classList.toggle("active", ax === "v");
+    document.getElementById("poke-axis-h").classList.toggle("active", ax === "h");
+    document.getElementById("poke-dir-v-row").style.display = (ax === "v") ? "flex" : "none";
+    document.getElementById("poke-dir-h-row").style.display = (ax === "h") ? "flex" : "none";
+    window.setPokeDir(ax === "v" ? "up" : "right");
+  };
+
+  window.setPokeDir = function(d) {
+    pokeDir = d;
+    document.getElementById("poke-v-up").classList.toggle("active", d === "up");
+    document.getElementById("poke-v-down").classList.toggle("active", d === "down");
+    document.getElementById("poke-h-right").classList.toggle("active", d === "right");
+    document.getElementById("poke-h-left").classList.toggle("active", d === "left");
+  };
+
+  function drawPokeSlotBand(ctx, bg, bandX, bandY, bandW, bandH, offsetVal) {
+    var fCanvases = buildFrameCanvases(bg.frames, bg.width, bg.height);
+    var n = fCanvases.length;
+    if (n === 0) return;
+    if (n === 1) {
+      ctx.drawImage(fCanvases[0], bandX, bandY, bandW, bandH);
+      return;
+    }
+
+    var defaultIdx = Math.min(1, n - 1);
+    var order = [];
+    for (var i = 0; i < n; i++) {
+      order.push((defaultIdx + i) % n);
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bandX, bandY, bandW, bandH);
+    ctx.clip();
+
+    if (pokeAxis === "h") {
+      var spanW = bandW * n;
+      var modX = ((offsetVal % spanW) + spanW) % spanW;
+      var shiftX = (pokeDir === "right") ? modX : -modX;
+      for (var k = -1; k <= n; k++) {
+        var fIdx = order[((k % n) + n) % n];
+        var dx = bandX + k * bandW + shiftX;
+        ctx.drawImage(fCanvases[fIdx], dx, bandY, bandW, bandH);
+      }
+    } else {
+      var spanH = bandH * n;
+      var modY = ((offsetVal % spanH) + spanH) % spanH;
+      var shiftY = (pokeDir === "down") ? modY : -modY;
+      for (var m = -1; m <= n; m++) {
+        var fIdxV = order[((m % n) + n) % n];
+        var dy = bandY + m * bandH + shiftY;
+        ctx.drawImage(fCanvases[fIdxV], bandX, dy, bandW, bandH);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function startPokePreviewLoop() {
+    if (pokeTimer) clearInterval(pokeTimer);
+    var pCanvasEl = document.getElementById("poke-preview-canvas");
+    var pCtxEl = pCanvasEl.getContext("2d");
+    var tierH = pCanvasEl.height / 3;
+
+    function tick() {
+      pCtxEl.fillStyle = "#ffffff";
+      pCtxEl.fillRect(0, 0, pCanvasEl.width, pCanvasEl.height);
+      if (pokeScrollOn) {
+        pokeOffset += 3;
+      }
+      for (var s = 0; s < 3; s++) {
+        drawPokeSlotBand(pCtxEl, pokeSlotsData[s] || makeFallbackWhiteBg(), 0, s * tierH, pCanvasEl.width, tierH, pokeOffset);
+      }
+    }
+    tick();
+    pokeTimer = setInterval(tick, 40);
+  }
+
+  window.confirmPokePreviewAndStartTimer = function() {
+    if (pokeTimer) clearInterval(pokeTimer);
+    window.showScreen("screen-pv-timer-setup");
+  };
+
+  /* ----------------------------
+     制限時間（1〜5分）・段／コマ選択・スタンプ配置・MP4録画
+  ---------------------------- */
+  var pvCanvas = document.getElementById("pv-canvas");
+  var pvCtx = pvCanvas.getContext("2d");
+  var selectedStampIdx = 0;
+  var pvTier = 0;
+  var pvSlot = 0;
+  var placedStamps = [];
+  var pvRenderTimer = null;
+  var pvCountdownTimer = null;
+  var pvRemainingSec = 60;
+  var draggingPlacedIdx = -1;
+  var dragOffsetX = 0;
+  var dragOffsetY = 0;
+
+  window.setPvTier = function(t) {
+    pvTier = t;
+    [0, 1, 2].forEach(function(i) {
+      document.getElementById("pv-tier-" + (i + 1)).classList.toggle("active", i === t);
+    });
+    updatePvTargetBadge();
+  };
+
+  window.setPvSlot = function(s) {
+    pvSlot = s;
+    [0, 1, 2].forEach(function(i) {
+      document.getElementById("pv-slot-" + (i + 1)).classList.toggle("active", i === s);
+    });
+    updatePvTargetBadge();
+  };
+
+  function updatePvTargetBadge() {
+    document.getElementById("pv-target-badge").textContent = "対象: " + (pvTier + 1) + "段目 / " + (pvSlot + 1) + "枚目";
+  }
+
+  window.startPvEditingSession = function(customMinutes, fromPeer) {
+    var mins = customMinutes || parseInt(document.getElementById("select-pv-minutes").value, 10) || 1;
+    mins = Math.min(5, Math.max(1, mins));
+    if (!fromPeer) {
+      safeSendPeer({ type: "round_start", minutes: mins });
+    }
+    pvRemainingSec = mins * 60;
+    renderStampList();
+    updatePvTargetBadge();
+    updatePvTimerLabel();
+    window.showScreen("screen-pv");
+
+    if (pvCountdownTimer) clearInterval(pvCountdownTimer);
+    pvCountdownTimer = setInterval(function() {
+      pvRemainingSec--;
+      updatePvTimerLabel();
+      if (pvRemainingSec <= 0) {
+        clearInterval(pvCountdownTimer);
+        finishPvEditingRound();
+      }
+    }, 1000);
+
+    startPvEditCanvasLoop();
+  };
+
+  function updatePvTimerLabel() {
+    var m = Math.floor(pvRemainingSec / 60);
+    var s = pvRemainingSec % 60;
+    document.getElementById("pv-timer-badge").textContent =
+      "残り " + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  function renderStampList() {
+    var listEl = document.getElementById("stamp-list");
+    listEl.innerHTML = "";
+    if (registeredStamps.length === 0) {
+      listEl.innerHTML = "<div style='font-size:10px; color:#666; padding:4px;'>共有スタンプがありません。アニメ素材から登録してください。</div>";
+      return;
+    }
+    for (var i = 0; i < registeredStamps.length; i++) {
+      (function(idx, st) {
+        var row = document.createElement("div");
+        row.className = "stamp-item" + (idx === selectedStampIdx ? " selected-stamp" : "");
+        row.textContent = st.name + " (" + st.frames.length + "枚)";
+        row.onclick = function() {
+          selectedStampIdx = idx;
+          renderStampList();
+        };
+        listEl.appendChild(row);
+      })(i, registeredStamps[i]);
+    }
+  }
+
+  window.placeSelectedStamp = function() {
+    if (registeredStamps.length === 0) {
+      alert("先にアニメーション素材からスタンプ登録を行ってください。");
+      return;
+    }
+    var st = registeredStamps[selectedStampIdx] || registeredStamps[0];
+    var tierBandY = pvTier * 100;
+    placedStamps.push({
+      stamp: st,
+      tier: pvTier,
+      slot: pvSlot,
+      x: 30 + (placedStamps.length * 24) % 260,
+      y: tierBandY + 12
+    });
+  };
+
+  function renderStampFrameToCanvas(st, fIdx) {
+    var tmp = document.createElement("canvas");
+    tmp.width = st.width;
+    tmp.height = st.height;
+    var tctx = tmp.getContext("2d");
+    tctx.putImageData(st.frames[fIdx], 0, 0);
+    if (st.transparentColor) {
+      var imgD = tctx.getImageData(0, 0, st.width, st.height);
+      var px = imgD.data;
+      var tr = parseInt(st.transparentColor.slice(1, 3), 16);
+      var tg = parseInt(st.transparentColor.slice(3, 5), 16);
+      var tb = parseInt(st.transparentColor.slice(5, 7), 16);
+      for (var p = 0; p < px.length; p += 4) {
+        if (Math.abs(px[p] - tr) <= 4 && Math.abs(px[p + 1] - tg) <= 4 && Math.abs(px[p + 2] - tb) <= 4) {
+          px[p + 3] = 0;
+        }
+      }
+      tctx.putImageData(imgD, 0, 0);
+    }
+    return tmp;
+  }
+
+  function renderPvCompositeFrame(targetCtx, w, h, tickMs) {
+    targetCtx.fillStyle = "#ffffff";
+    targetCtx.fillRect(0, 0, w, h);
+
+    var tierH = h / 3;
+    for (var s = 0; s < 3; s++) {
+      var bg = pokeSlotsData[s] || makeFallbackWhiteBg();
+      var fIdxBg = pvSlot % bg.frames.length;
+      var bTmp = document.createElement("canvas");
+      bTmp.width = bg.width;
+      bTmp.height = bg.height;
+      bTmp.getContext("2d").putImageData(bg.frames[fIdxBg], 0, 0);
+      targetCtx.drawImage(bTmp, 0, s * tierH, w, tierH);
+    }
+
+    for (var i = 0; i < placedStamps.length; i++) {
+      var ps = placedStamps[i];
+      var st = ps.stamp;
+      var stepFrames = Math.max(1, Math.round(st.speed / 50));
+      var fIdx = Math.floor(tickMs / (stepFrames * 50)) % st.frames.length;
+      var sCan = renderStampFrameToCanvas(st, fIdx);
+      targetCtx.drawImage(sCan, ps.x, ps.y);
+    }
+  }
+
+  function startPvEditCanvasLoop() {
+    if (pvRenderTimer) clearInterval(pvRenderTimer);
+    var tick = 0;
+    pvRenderTimer = setInterval(function() {
+      tick += 50;
+      renderPvCompositeFrame(pvCtx, pvCanvas.width, pvCanvas.height, tick);
+
+      pvCtx.strokeStyle = "rgba(0, 0, 0, 0.25)";
+      pvCtx.setLineDash([4, 4]);
+      pvCtx.beginPath();
+      pvCtx.moveTo(0, 100); pvCtx.lineTo(pvCanvas.width, 100);
+      pvCtx.moveTo(0, 200); pvCtx.lineTo(pvCanvas.width, 200);
+      pvCtx.stroke();
+      pvCtx.setLineDash([]);
+    }, 50);
+  }
+
+  function getPvXY(cx, cy) {
+    var r = pvCanvas.getBoundingClientRect();
+    return {
+      x: (cx - r.left) * (pvCanvas.width / r.width),
+      y: (cy - r.top) * (pvCanvas.height / r.height)
+    };
+  }
+
+  function onPvDown(cx, cy) {
+    var pt = getPvXY(cx, cy);
+    for (var i = placedStamps.length - 1; i >= 0; i--) {
+      var ps = placedStamps[i];
+      if (pt.x >= ps.x && pt.x <= ps.x + ps.stamp.width && pt.y >= ps.y && pt.y <= ps.y + ps.stamp.height) {
+        draggingPlacedIdx = i;
+        dragOffsetX = pt.x - ps.x;
+        dragOffsetY = pt.y - ps.y;
+        return;
+      }
+    }
+  }
+
+  function onPvMove(cx, cy) {
+    if (draggingPlacedIdx < 0) return;
+    var pt = getPvXY(cx, cy);
+    placedStamps[draggingPlacedIdx].x = pt.x - dragOffsetX;
+    placedStamps[draggingPlacedIdx].y = pt.y - dragOffsetY;
+  }
+
+  function onPvUp() {
+    draggingPlacedIdx = -1;
+  }
+
+  pvCanvas.addEventListener("mousedown", function(e) { onPvDown(e.clientX, e.clientY); });
+  window.addEventListener("mousemove", function(e) { onPvMove(e.clientX, e.clientY); });
+  window.addEventListener("mouseup", onPvUp);
+
+  pvCanvas.addEventListener("touchstart", function(e) {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      onPvDown(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+  pvCanvas.addEventListener("touchmove", function(e) {
+    if (draggingPlacedIdx >= 0 && e.touches.length === 1) {
+      e.preventDefault();
+      onPvMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+  pvCanvas.addEventListener("touchend", onPvUp);
+
+  /* ----------------------------
+     制限時間終了→合体プレビュー→追加／終了／MP4実録画
+  ---------------------------- */
+  var resultLoopTimer = null;
+  var recordedVideoBlob = null;
+  var recordedVideoExt = "mp4";
+
+  window.finishPvEditingRound = function(fromPeer) {
+    if (pvCountdownTimer) clearInterval(pvCountdownTimer);
+    if (pvRenderTimer) clearInterval(pvRenderTimer);
+    if (!fromPeer) {
+      safeSendPeer({ type: "round_finish" });
+    }
+    openPvRoundResultModal();
+  };
+
+  function openPvRoundResultModal() {
+    var rCan = document.getElementById("pv-result-canvas");
+    var rCtx = rCan.getContext("2d");
+    var tick = 0;
+
+    if (resultLoopTimer) clearInterval(resultLoopTimer);
+    resultLoopTimer = setInterval(function() {
+      tick += 60;
+      renderPvCompositeFrame(rCtx, rCan.width, rCan.height, tick);
+    }, 60);
+
+    document.getElementById("pv-final-save-box").style.display = "none";
+    document.getElementById("pv-guest-add-time-box").style.display = "none";
+
+    if (state.playMode === "multi" && state.role === "guest") {
+      document.getElementById("pv-guest-choice-box").style.display = "block";
+      document.getElementById("pv-host-decision-box").style.display = "none";
+    } else {
+      document.getElementById("pv-guest-choice-box").style.display = "none";
+      document.getElementById("pv-host-decision-box").style.display = "block";
+      refreshHostRequestsSummary();
+    }
+
+    document.getElementById("modal-pv-round-result").classList.add("open");
+  }
+
+  window.guestChooseAdd = function() {
+    document.getElementById("pv-guest-choice-box").style.display = "none";
+    document.getElementById("pv-guest-add-time-box").style.display = "block";
+  };
+
+  window.submitGuestAddRequest = function() {
+    var m = parseInt(document.getElementById("select-guest-add-min").value, 10) || 1;
+    var req = { playerId: state.myPlayerId, action: "add", minutes: m };
+    guestRequests.push(req);
+    safeSendPeer({ type: "guest_decision", playerId: req.playerId, action: req.action, minutes: req.minutes });
+    document.getElementById("pv-guest-add-time-box").style.display = "none";
+    document.getElementById("pv-host-decision-box").style.display = "block";
+    refreshHostRequestsSummary();
+  };
+
+  window.guestChooseEnd = function() {
+    var req = { playerId: state.myPlayerId, action: "end", minutes: 0 };
+    guestRequests.push(req);
+    safeSendPeer({ type: "guest_decision", playerId: req.playerId, action: req.action, minutes: 0 });
+    document.getElementById("pv-guest-choice-box").style.display = "none";
+    document.getElementById("pv-host-decision-box").style.display = "block";
+    refreshHostRequestsSummary();
+  };
+
+  function refreshHostRequestsSummary() {
+    var sumEl = document.getElementById("pv-host-requests-summary");
+    if (state.playMode === "single") {
+      sumEl.textContent = "一人モード: 編集を追加するか、MP4録画保存へ進んでください。";
+      return;
+    }
+    if (guestRequests.length === 0) {
+      sumEl.textContent = "参加者希望: 選択結果を確認し、ホストが「追加」または「保存」を押してください。";
+      return;
+    }
+    var lines = guestRequests.map(function(r) {
+      var pid = r.playerId || 2;
+      return "プレイヤー" + pid + ": " + (r.action === "add" ? ("追加 (" + r.minutes + "分希望)") : "終了希望");
+    });
+    sumEl.innerHTML = lines.join("<br>");
+  }
+
+  window.hostChooseAddMore = function() {
+    if (resultLoopTimer) clearInterval(resultLoopTimer);
+    document.getElementById("modal-pv-round-result").classList.remove("open");
+    var suggestedMin = 1;
+    for (var i = guestRequests.length - 1; i >= 0; i--) {
+      if (guestRequests[i].action === "add" && guestRequests[i].minutes) {
+        suggestedMin = guestRequests[i].minutes;
+        break;
+      }
+    }
+    document.getElementById("select-pv-minutes").value = String(suggestedMin);
+    window.showScreen("screen-pv-timer-setup");
+  };
+
+  /* 標準解像度（480×300・30fps）で3秒間の動画録画 */
+  function recordStandardVideoBlob(durationMs, callback) {
+    var recCanvas = document.createElement("canvas");
+    recCanvas.width = 480;
+    recCanvas.height = 300;
+    var recCtx = recCanvas.getContext("2d");
+
+    if (!recCanvas.captureStream || typeof MediaRecorder === "undefined") {
+      recCanvas.toBlob(function(pngBlob) {
+        callback(pngBlob, "png");
+      }, "image/png");
+      return;
+    }
+
+    var stream = recCanvas.captureStream(30);
+    var mimeType = "";
+    if (MediaRecorder.isTypeSupported("video/mp4")) {
+      mimeType = "video/mp4";
+      recordedVideoExt = "mp4";
+    } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+      mimeType = "video/webm;codecs=vp8";
+      recordedVideoExt = "webm";
+    } else if (MediaRecorder.isTypeSupported("video/webm")) {
+      mimeType = "video/webm";
+      recordedVideoExt = "webm";
+    }
+
+    var chunks = [];
+    var recorder;
+    try {
+      recorder = mimeType ? new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1200000 }) : new MediaRecorder(stream);
+    } catch (e) {
+      recCanvas.toBlob(function(pngBlob) {
+        callback(pngBlob, "png");
+      }, "image/png");
+      return;
+    }
+
+    recorder.ondataavailable = function(ev) {
+      if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+    };
+
+    var elapsed = 0;
+    var frameTimer = setInterval(function() {
+      elapsed += 50;
+      renderPvCompositeFrame(recCtx, recCanvas.width, recCanvas.height, elapsed);
+    }, 50);
+
+    recorder.onstop = function() {
+      clearInterval(frameTimer);
+      var outMime = mimeType || "video/webm";
+      callback(new Blob(chunks, { type: outMime }), recordedVideoExt);
+    };
+
+    recorder.start();
+    setTimeout(function() {
+      if (recorder.state !== "inactive") {
+        recorder.stop();
+      }
+    }, durationMs);
+  }
+
+  window.hostChooseSaveMp4 = function() {
+    var btn = document.getElementById("btn-record-mp4");
+    btn.disabled = true;
+    btn.textContent = "録画中...";
+    recordStandardVideoBlob(3000, function(blob, ext) {
+      btn.disabled = false;
+      btn.textContent = "保存（MP4録画）";
+      recordedVideoBlob = blob;
+      recordedVideoExt = ext;
+      safeSendPeer({ type: "save_ready" });
+
+      document.getElementById("pv-host-decision-box").style.display = "none";
+      document.getElementById("pv-final-save-box").style.display = "block";
+      document.getElementById("pv-mp4-status").textContent =
+        (ext === "mp4" ? "MP4" : ext.toUpperCase() + "（互換形式）") + " 動画を作成しました。保存先を選んで保存してください。";
+    });
+  };
+
+  window.chooseSaveLocationAndReturn = function() {
+    if (recordedVideoBlob) {
+      var url = URL.createObjectURL(recordedVideoBlob);
+      var a = document.createElement("a");
+      a.download = "wing_pv_combined." + recordedVideoExt;
+      a.href = url;
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
+    }
+    window.returnToTitleImmediately();
+  };
+
+  window.returnToTitleImmediately = function() {
+    if (resultLoopTimer) clearInterval(resultLoopTimer);
+    if (pvRenderTimer) clearInterval(pvRenderTimer);
+    if (pvCountdownTimer) clearInterval(pvCountdownTimer);
+    recordedVideoBlob = null;
+    document.getElementById("modal-pv-round-result").classList.remove("open");
+    window.showScreen("screen-title");
+  };
+
+  window.addEventListener("resize", function() {
+    checkPortraitOverlay();
+    fitDrawCanvas();
   });
 
-  gif.render();
-}
-
-// 保存後のダイアログ
-function openAfterSaveDialog() {
-  document.getElementById('modal-after-save').classList.add('active');
-}
-function closeAfterSaveDialog() {
-  document.getElementById('modal-after-save').classList.remove('active');
-}
-function returnToMenu() {
-  closeAfterSaveDialog();
-  goScreen('screen-mode2');
-}
+  window.applyDevice(detectInitialDevice());
+})();
 </script>
 </body>
 </html>
