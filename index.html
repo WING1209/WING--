@@ -22,7 +22,7 @@
     font-size: 13px;
   }
 
-  /* スマホ縦画面警告（PV縦プレビュー中は免除） */
+  /* スマホ縦画面警告（PV縦画面・縦プレビュー中は免除） */
   #portrait-overlay {
     display: none;
     position: fixed;
@@ -335,7 +335,11 @@
     pointer-events: none;
   }
   #trace-overlay-canvas {
-    z-index: 4;
+    z-index: 3;
+    display: none;
+  }
+  #trace-overlay-canvas.show {
+    display: block;
   }
   #paint-canvas {
     z-index: 5;
@@ -372,7 +376,7 @@
     cursor: pointer;
   }
 
-  /* 軌跡＆各コマレイヤー表示バー */
+  /* 履歴＆各コマレイヤー表示バー */
   #trace-layer-bar {
     display: none;
     background: #2f3542;
@@ -610,7 +614,7 @@
     text-align: left;
   }
 
-  /* PV合体編集画面 */
+  /* PV合体編集画面（スマホ縦画面3枠想定・上下余白約1cm確保） */
   #screen-pv {
     flex-direction: row;
     justify-content: space-between;
@@ -655,11 +659,13 @@
     pointer-events: auto;
   }
   #pv-canvas {
-    width: 480px;
-    height: 300px;
+    height: calc(100% - 46px);
+    aspect-ratio: 9 / 16;
+    max-width: 92%;
     background: #ffffff;
     border: 3px solid #222222;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+    margin-top: 24px;
   }
   #pv-side {
     width: 235px;
@@ -769,7 +775,7 @@
 <div id="screen-title" class="screen active">
   <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
   <div class="blink-start" id="btn-title-start">スタート</div>
-  <div class="version-badge" id="app-version-badge">Ver 1.4.8</div>
+  <div class="version-badge" id="app-version-badge">Ver 1.4.9</div>
 </div>
 
 <!-- 2. メニュー1：モード選択 -->
@@ -902,7 +908,7 @@
         グリッド<span class="t-sub">60×60</span>
       </button>
       <button type="button" class="t-btn" id="btn-tool-trace" onclick="toggleTraceMode()">
-        軌跡<span class="t-sub" id="lbl-trace">OFF</span>
+        履歴<span class="t-sub" id="lbl-trace">OFF</span>
       </button>
       <button type="button" class="t-btn" onclick="doUndo()">
         ←<span class="t-sub">戻す</span>
@@ -999,7 +1005,7 @@
 <div id="screen-poke-setup" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">ポケカラ用（縦3枠）背景割り当て</h2>
-    <div style="font-size:11px; color:#555; margin-bottom:6px;">上段・中段・下段ごとに背景（最大3個）または「なし」を選べます</div>
+    <div style="font-size:11px; color:#555; margin-bottom:6px;">スマホ縦画面の上段・中段・下段（各上下余白約1cm）に背景または「なし」を割り当てます</div>
     <div id="poke-slot-selectors" style="text-align:left; font-size:12px; margin-bottom:8px;"></div>
     <button type="button" class="pop-btn green" onclick="buildPokeVerticalPreview()">OK（縦プレビューへ）</button>
     <button type="button" class="pop-btn gray" onclick="showScreen('screen-pv-select')">もどる</button>
@@ -1009,12 +1015,12 @@
 <!-- 7-2. ポケカラ用 縦画面フィットプレビュー -->
 <div id="screen-poke-preview" class="screen">
   <div id="poke-phone-frame">
-    <canvas id="poke-preview-canvas" width="240" height="480"></canvas>
+    <canvas id="poke-preview-canvas" width="360" height="640"></canvas>
   </div>
   <div class="panel-card" id="poke-control-panel">
     <h2 class="panel-heading">縦枠合体プレビュー</h2>
     <div style="font-size:11px; color:#444; margin-bottom:6px;">
-      ※縦横比を維持しつつ、上下左右のつなぎ目隙間0でループ再生します。
+      ※スマホ縦画面想定・上下余白約1cmで3枠表示し、縦横比を維持しつつ大きくループ再生します。
     </div>
     <div class="option-row">
       <button type="button" class="mini-pill active" id="poke-scroll-toggle" onclick="togglePokeScroll()">スクロール: ON</button>
@@ -1066,7 +1072,7 @@
       <div class="hud-badge" id="pv-target-badge">対象: 上段 / 1枚目</div>
       <button type="button" class="mini-pill" style="pointer-events:auto;" onclick="finishPvEditingRound()">時間終了・合体へ</button>
     </div>
-    <canvas id="pv-canvas" width="480" height="300"></canvas>
+    <canvas id="pv-canvas" width="360" height="640"></canvas>
   </div>
   <div id="pv-side">
     <div style="font-size:11px; font-weight:bold; text-align:center;">段・コマ選択</div>
@@ -1123,7 +1129,7 @@
 <div id="modal-pv-round-result" class="modal-bg">
   <div class="panel-card" style="max-width:460px;">
     <div style="font-size:14px; font-weight:bold; margin-bottom:4px;">合体アニメーションプレビュー</div>
-    <canvas id="pv-result-canvas" width="360" height="225" style="border:3px solid #222; background:#fff; max-width:100%;"></canvas>
+    <canvas id="pv-result-canvas" width="270" height="480" style="border:3px solid #222; background:#fff; max-height:46vh; width:auto;"></canvas>
 
     <!-- ゲスト向け：追加または終了 -->
     <div id="pv-guest-choice-box" style="display:none; margin-top:8px;">
@@ -1174,7 +1180,7 @@
 (function() {
   "use strict";
 
-  var APP_VERSION = "Ver 1.4.8";
+  var APP_VERSION = "Ver 1.4.9";
   document.getElementById("app-version-badge").textContent = APP_VERSION;
 
   /* ----------------------------
@@ -1477,9 +1483,12 @@
 
   function checkPortraitOverlay() {
     var ov = document.getElementById("portrait-overlay");
-    var activePokePreview = document.getElementById("screen-poke-preview").classList.contains("active");
+    var activeVerticalScreen =
+      document.getElementById("screen-poke-preview").classList.contains("active") ||
+      document.getElementById("screen-pv").classList.contains("active") ||
+      document.getElementById("modal-pv-round-result").classList.contains("open");
     var isPortrait = window.innerHeight > window.innerWidth;
-    if (!activePokePreview && state.device === "mobile" && isPortrait) {
+    if (!activeVerticalScreen && state.device === "mobile" && isPortrait) {
       ov.className = "show";
     } else {
       ov.className = "";
@@ -1608,7 +1617,7 @@
   };
 
   /* ----------------------------
-     お絵描き・GUI（選んだ透明色＝背景色で初期化・描画＋軌跡＆コマ別表示切替）
+     お絵描き・GUI（選んだ透明色＝背景色で初期化・描画＋履歴＆コマ別表示切替）
   ---------------------------- */
   var pCanvas = document.getElementById("paint-canvas");
   var pCtx = pCanvas.getContext("2d");
@@ -1650,6 +1659,7 @@
     document.getElementById("btn-tool-trace").classList.remove("selected");
     document.getElementById("lbl-trace").textContent = "OFF";
     document.getElementById("trace-layer-bar").classList.remove("show");
+    tCanvas.classList.remove("show");
 
     setCanvasDimensions(480, 300);
     clearCanvasWithBaseBg(pCtx, state.canvasW, state.canvasH);
@@ -1669,13 +1679,15 @@
 
   window.toggleTraceMode = function() {
     if (state.gameMode !== "anim") {
-      alert("軌跡表示はアニメーションスタンプ制作時に利用できます。");
+      alert("履歴表示はアニメーションスタンプ制作時に利用できます。");
       return;
     }
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     state.traceOn = !state.traceOn;
     document.getElementById("btn-tool-trace").classList.toggle("selected", state.traceOn);
     document.getElementById("lbl-trace").textContent = state.traceOn ? "ON" : "OFF";
     document.getElementById("trace-layer-bar").classList.toggle("show", state.traceOn);
+    tCanvas.classList.toggle("show", state.traceOn);
     refreshTraceLayerBar();
     renderTraceOverlay();
   };
@@ -1697,18 +1709,19 @@
       return;
     }
     bar.classList.add("show");
-    var html = "<span style='font-size:9px; margin-right:2px;'>軌跡:</span>";
+    var html = "<span style='font-size:9px; margin-right:2px;'>履歴:</span>";
     for (var i = 0; i < state.frames.length; i++) {
       var isHidden = !!state.hiddenLayerMap[i];
       var isCur = (i === state.frameIdx);
-      var chipClass = "layer-toggle-chip" + (!isHidden && !isCur ? " active" : "");
-      var label = (i + 1) + "枚目" + (isCur ? "(現)" : (isHidden ? "×" : "○"));
+      var chipClass = "layer-toggle-chip" + (!isHidden ? " active" : "");
+      var stateText = isHidden ? "OFF" : "ON";
+      var label = (i + 1) + "枚目:" + stateText + (isCur ? "(現)" : "");
       html += "<button type='button' class='" + chipClass + "' onclick='toggleSingleTraceFrame(" + i + ")'>" + label + "</button>";
     }
     bar.innerHTML = html;
   }
 
-  /* 現在のコマより前（1枚目〜直前まで）に描かれた内容を薄っすら表示（コマごとの表示/非表示切替対応） */
+  /* 1つ前までに描かれた内容を薄っすら表示（コマごとのON/OFFボタン切替対応） */
   function renderTraceOverlay() {
     tCtx.clearRect(0, 0, state.canvasW, state.canvasH);
     if (!state.traceOn || state.gameMode !== "anim") return;
@@ -1726,23 +1739,21 @@
       tmpCan.height = fd.height;
       var tmpCtx = tmpCan.getContext("2d");
       var copy = new ImageData(new Uint8ClampedArray(fd.data), fd.width, fd.height);
+      var px = copy.data;
 
-      if (baseRgb) {
-        var px = copy.data;
-        for (var p = 0; p < px.length; p += 4) {
-          if (
-            Math.abs(px[p] - baseRgb.r) <= 12 &&
-            Math.abs(px[p + 1] - baseRgb.g) <= 12 &&
-            Math.abs(px[p + 2] - baseRgb.b) <= 12
-          ) {
-            px[p + 3] = 0;
-          }
+      for (var p = 0; p < px.length; p += 4) {
+        if (px[p + 3] === 0) continue;
+        if (baseRgb &&
+            Math.abs(px[p] - baseRgb.r) <= 8 &&
+            Math.abs(px[p + 1] - baseRgb.g) <= 8 &&
+            Math.abs(px[p + 2] - baseRgb.b) <= 8) {
+          px[p + 3] = 0;
         }
       }
       tmpCtx.putImageData(copy, 0, 0);
 
       tCtx.save();
-      tCtx.globalAlpha = 0.24;
+      tCtx.globalAlpha = 0.35;
       tCtx.drawImage(tmpCan, 0, 0);
       tCtx.restore();
     }
@@ -2236,7 +2247,7 @@
   function drawAspectSeamlessLoop(ctx, sourceCan, boxX, boxY, boxW, boxH, offsetVal, axis, dir) {
     var sw = sourceCan.width;
     var sh = sourceCan.height;
-    if (sw <= 0 || sh <= 0) return;
+    if (sw <= 0 || sh <= 0 || boxW <= 0 || boxH <= 0) return;
 
     var scale = Math.min(boxW / sw, boxH / sh);
     var tileW = Math.max(1, Math.round(sw * scale));
@@ -2643,7 +2654,7 @@
   };
 
   /* ----------------------------
-     （３）PV（合体）モード：①ポケカラ用（上段・中段・下段＋「なし」選択可）
+     （３）PV（合体）モード：スマホ縦画面3枠・上下余白約1cm確保
   ---------------------------- */
   var pokeSlotsData = [null, null, null];
   var pokeScrollOn = true;
@@ -2653,6 +2664,34 @@
   var pokeTimer = null;
 
   var tierNamesJp = ["上段", "中段", "下段"];
+
+  /* 縦画面（基準360×640）における上段・中段・下段3枠のジオメトリ（各段上下余白約1cm≒38px相当） */
+  function getVerticalThreeTierLayout(totalW, totalH) {
+    var outerPadY = Math.max(12, Math.round(totalH * 0.03));
+    var tierGapY = Math.max(24, Math.round(totalH * 0.055));
+    var innerPadY = Math.max(14, Math.round(totalH * 0.032));
+    var sidePadX = Math.max(8, Math.round(totalW * 0.03));
+
+    var usableH = totalH - outerPadY * 2 - tierGapY * 2;
+    var tierOuterH = Math.max(40, Math.floor(usableH / 3));
+
+    var tiers = [];
+    for (var i = 0; i < 3; i++) {
+      var topY = outerPadY + i * (tierOuterH + tierGapY);
+      var innerTop = topY + innerPadY;
+      var innerH = Math.max(24, tierOuterH - innerPadY * 2);
+      tiers.push({
+        index: i,
+        outerTop: topY,
+        outerHeight: tierOuterH,
+        boxX: sidePadX,
+        boxY: innerTop,
+        boxW: Math.max(20, totalW - sidePadX * 2),
+        boxH: innerH
+      });
+    }
+    return tiers;
+  }
 
   window.openPvModeSelect = function() {
     window.showScreen("screen-pv-select");
@@ -2715,32 +2754,57 @@
     document.getElementById("poke-h-left").classList.toggle("active", d === "left");
   };
 
-  function drawPokeSlotBand(ctx, bg, bandX, bandY, bandW, bandH, offsetVal) {
-    if (!bg) return;
-    var strip = bg.stripCanvas || buildHorizontalStripCanvas(bg.frames, bg.unitWidth, bg.unitHeight, null);
-    drawAspectSeamlessLoop(ctx, strip, bandX, bandY, bandW, bandH, offsetVal, pokeAxis, pokeDir);
+  function drawVerticalThreeTierScene(ctx, w, h, offsetVal, tickMs, withGuideLines) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+
+    var tiers = getVerticalThreeTierLayout(w, h);
+    for (var s = 0; s < 3; s++) {
+      var t = tiers[s];
+      var bg = pokeSlotsData[s];
+      if (bg) {
+        var strip = bg.stripCanvas || buildHorizontalStripCanvas(bg.frames, bg.unitWidth, bg.unitHeight, null);
+        drawAspectSeamlessLoop(ctx, strip, t.boxX, t.boxY, t.boxW, t.boxH, offsetVal, pokeAxis, pokeDir);
+      }
+      if (withGuideLines) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(t.boxX, t.boxY, t.boxW, t.boxH);
+        ctx.restore();
+      }
+    }
+
+    for (var i = 0; i < placedStamps.length; i++) {
+      var ps = placedStamps[i];
+      var st = ps.stamp;
+      var sc = ps.scale || st.scale || 1.0;
+      var targetTier = tiers[ps.tier] || tiers[0];
+      var baseScale = Math.max(0.45, targetTier.boxH / Math.max(40, st.height));
+      var dw = Math.max(12, Math.round(st.width * sc * baseScale));
+      var dh = Math.max(12, Math.round(st.height * sc * baseScale));
+      var stepFrames = Math.max(1, Math.round(st.speed / 50));
+      var fIdx = Math.floor(tickMs / (stepFrames * 50)) % st.frames.length;
+      var sCan = createTransparentFrameCanvas(st.frames[fIdx], st.transparentColor);
+      ctx.drawImage(sCan, Math.round(ps.x), Math.round(ps.y), dw, dh);
+    }
   }
 
   function startPokePreviewLoop() {
     if (pokeTimer) clearInterval(pokeTimer);
     var pCanvasEl = document.getElementById("poke-preview-canvas");
     var pCtxEl = pCanvasEl.getContext("2d");
-    var tierH = Math.round(pCanvasEl.height / 3);
+    var tick = 0;
 
-    function tick() {
-      pCtxEl.fillStyle = "#ffffff";
-      pCtxEl.fillRect(0, 0, pCanvasEl.width, pCanvasEl.height);
+    function tickLoop() {
+      tick += 40;
       if (pokeScrollOn) {
         pokeOffset += 3;
       }
-      for (var s = 0; s < 3; s++) {
-        var by = s * tierH;
-        var bh = (s === 2) ? (pCanvasEl.height - tierH * 2) : tierH;
-        drawPokeSlotBand(pCtxEl, pokeSlotsData[s], 0, by, pCanvasEl.width, bh, pokeOffset);
-      }
+      drawVerticalThreeTierScene(pCtxEl, pCanvasEl.width, pCanvasEl.height, pokeOffset, tick, false);
     }
-    tick();
-    pokeTimer = setInterval(tick, 40);
+    tickLoop();
+    pokeTimer = setInterval(tickLoop, 40);
   }
 
   window.confirmPokePreviewAndStartTimer = function() {
@@ -2871,48 +2935,34 @@
       return;
     }
     var st = registeredStamps[selectedStampIdx] || registeredStamps[0];
-    var tierBandY = pvTier * 100;
+    var tiers = getVerticalThreeTierLayout(pvCanvas.width, pvCanvas.height);
+    var targetTier = tiers[pvTier] || tiers[0];
     placedStamps.push({
       stamp: st,
       tier: pvTier,
       slot: pvSlot,
       scale: st.scale || 1.0,
-      x: 30 + (placedStamps.length * 24) % 260,
-      y: tierBandY + 12
+      x: targetTier.boxX + 12 + (placedStamps.length * 18) % 120,
+      y: targetTier.boxY + 6
     });
   };
 
-  function renderStampFrameToCanvas(st, fIdx) {
-    return createTransparentFrameCanvas(st.frames[fIdx], st.transparentColor);
+  function getPlacedStampRect(ps, canvasW, canvasH) {
+    var tiers = getVerticalThreeTierLayout(canvasW, canvasH);
+    var targetTier = tiers[ps.tier] || tiers[0];
+    var sc = ps.scale || ps.stamp.scale || 1.0;
+    var baseScale = Math.max(0.45, targetTier.boxH / Math.max(40, ps.stamp.height));
+    return {
+      x: ps.x,
+      y: ps.y,
+      w: Math.max(12, Math.round(ps.stamp.width * sc * baseScale)),
+      h: Math.max(12, Math.round(ps.stamp.height * sc * baseScale))
+    };
   }
 
   function renderPvCompositeFrame(targetCtx, w, h, tickMs) {
-    targetCtx.fillStyle = "#ffffff";
-    targetCtx.fillRect(0, 0, w, h);
-
-    var tierH = Math.round(h / 3);
     var scrollPx = Math.floor((tickMs / 40) * 3);
-
-    for (var s = 0; s < 3; s++) {
-      var bg = pokeSlotsData[s];
-      if (!bg) continue;
-      var strip = bg.stripCanvas || buildHorizontalStripCanvas(bg.frames, bg.unitWidth, bg.unitHeight, null);
-      var by = s * tierH;
-      var bh = (s === 2) ? (h - tierH * 2) : tierH;
-      drawAspectSeamlessLoop(targetCtx, strip, 0, by, w, bh, scrollPx, pokeAxis, pokeDir);
-    }
-
-    for (var i = 0; i < placedStamps.length; i++) {
-      var ps = placedStamps[i];
-      var st = ps.stamp;
-      var sc = ps.scale || st.scale || 1.0;
-      var dw = Math.max(8, Math.round(st.width * sc));
-      var dh = Math.max(8, Math.round(st.height * sc));
-      var stepFrames = Math.max(1, Math.round(st.speed / 50));
-      var fIdx = Math.floor(tickMs / (stepFrames * 50)) % st.frames.length;
-      var sCan = renderStampFrameToCanvas(st, fIdx);
-      targetCtx.drawImage(sCan, Math.round(ps.x), Math.round(ps.y), dw, dh);
-    }
+    drawVerticalThreeTierScene(targetCtx, w, h, scrollPx, tickMs, false);
   }
 
   function startPvEditCanvasLoop() {
@@ -2920,15 +2970,8 @@
     var tick = 0;
     pvRenderTimer = setInterval(function() {
       tick += 50;
-      renderPvCompositeFrame(pvCtx, pvCanvas.width, pvCanvas.height, tick);
-
-      pvCtx.strokeStyle = "rgba(0, 0, 0, 0.25)";
-      pvCtx.setLineDash([4, 4]);
-      pvCtx.beginPath();
-      pvCtx.moveTo(0, 100); pvCtx.lineTo(pvCanvas.width, 100);
-      pvCtx.moveTo(0, 200); pvCtx.lineTo(pvCanvas.width, 200);
-      pvCtx.stroke();
-      pvCtx.setLineDash([]);
+      var scrollPx = Math.floor((tick / 40) * 3);
+      drawVerticalThreeTierScene(pvCtx, pvCanvas.width, pvCanvas.height, scrollPx, tick, true);
     }, 50);
   }
 
@@ -2943,14 +2986,11 @@
   function onPvDown(cx, cy) {
     var pt = getPvXY(cx, cy);
     for (var i = placedStamps.length - 1; i >= 0; i--) {
-      var ps = placedStamps[i];
-      var sc = ps.scale || ps.stamp.scale || 1.0;
-      var sw = ps.stamp.width * sc;
-      var sh = ps.stamp.height * sc;
-      if (pt.x >= ps.x && pt.x <= ps.x + sw && pt.y >= ps.y && pt.y <= ps.y + sh) {
+      var rect = getPlacedStampRect(placedStamps[i], pvCanvas.width, pvCanvas.height);
+      if (pt.x >= rect.x && pt.x <= rect.x + rect.w && pt.y >= rect.y && pt.y <= rect.y + rect.h) {
         draggingPlacedIdx = i;
-        dragOffsetX = pt.x - ps.x;
-        dragOffsetY = pt.y - ps.y;
+        dragOffsetX = pt.x - rect.x;
+        dragOffsetY = pt.y - rect.y;
         refreshStampScaleLabel();
         return;
       }
@@ -3102,8 +3142,8 @@
     }
 
     var outCanvas = document.createElement("canvas");
-    outCanvas.width = 480;
-    outCanvas.height = 300;
+    outCanvas.width = 360;
+    outCanvas.height = 640;
     var outCtx = outCanvas.getContext("2d");
 
     if (!outCanvas.captureStream || typeof MediaRecorder === "undefined") {
@@ -3136,7 +3176,7 @@
     var recorder;
     try {
       recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1500000 })
+        ? new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1800000 })
         : new MediaRecorder(stream);
     } catch (e) {
       isJoiningBusy = false;
@@ -3271,6 +3311,7 @@
     }
 
     document.getElementById("modal-pv-round-result").classList.add("open");
+    checkPortraitOverlay();
   }
 
   window.guestChooseAdd = function() {
@@ -3330,8 +3371,8 @@
 
   function recordStandardVideoBlob(durationMs, callback) {
     var recCanvas = document.createElement("canvas");
-    recCanvas.width = 480;
-    recCanvas.height = 300;
+    recCanvas.width = 360;
+    recCanvas.height = 640;
     var recCtx = recCanvas.getContext("2d");
 
     if (!recCanvas.captureStream || typeof MediaRecorder === "undefined") {
@@ -3357,7 +3398,7 @@
     var chunks = [];
     var recorder;
     try {
-      recorder = mimeType ? new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1200000 }) : new MediaRecorder(stream);
+      recorder = mimeType ? new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1800000 }) : new MediaRecorder(stream);
     } catch (e) {
       recCanvas.toBlob(function(pngBlob) {
         callback(pngBlob, "png");
