@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>WINGお絵描きPV作成</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
   * {
     box-sizing: border-box;
@@ -22,7 +21,7 @@
     font-size: 13px;
   }
 
-  /* スマホ縦画面警告（PV縦プレビュー中は免除） */
+  /* スマホ縦画面警告（スマホモード時、または縦長画面のスマホ表示時） */
   #portrait-overlay {
     display: none;
     position: fixed;
@@ -48,7 +47,7 @@
     margin-bottom: 10px;
   }
 
-  /* 画面コンテナ */
+  /* 画面コンテナ（全画面固定） */
   .screen {
     display: none;
     position: fixed;
@@ -69,12 +68,11 @@
     display: flex;
   }
 
-  /* 上部中央：スマホ／PC切替バー（お絵描き画面中はツール保護のため非表示） */
+  /* 右上：スマホ／PC切替バー */
   .mode-switch-bar {
     position: fixed;
     top: 6px;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 8px;
     z-index: 500;
     background: rgba(255, 255, 255, 0.95);
     border: 2px solid #222222;
@@ -85,10 +83,6 @@
     gap: 4px;
     font-size: 11px;
     font-weight: bold;
-    white-space: nowrap;
-  }
-  body.drawing-mode .mode-switch-bar {
-    display: none;
   }
   .switch-btn {
     border: none;
@@ -112,9 +106,9 @@
     color: #ffffff;
     border: 3px solid #222222;
     border-radius: 14px;
-    padding: 7px 16px;
-    margin: 4px;
-    font-size: 13px;
+    padding: 8px 18px;
+    margin: 5px;
+    font-size: 14px;
     font-weight: bold;
     box-shadow: 0 4px 0 #222222;
     cursor: pointer;
@@ -126,7 +120,6 @@
   .pop-btn.blue { background: #1e90ff; }
   .pop-btn.green { background: #2ed573; color: #111111; }
   .pop-btn.purple { background: #9b59b6; }
-  .pop-btn.orange { background: #ffa502; color: #111111; }
   .pop-btn.gray { background: #dcdde1; color: #222222; }
   .pop-btn:disabled {
     opacity: 0.45;
@@ -149,7 +142,7 @@
     color: #1e90ff;
   }
   .blink-start {
-    margin-top: 20px;
+    margin-top: 22px;
     background: #222222;
     color: #ffffff;
     border: 3px solid #ffffff;
@@ -163,36 +156,22 @@
     from { opacity: 1; }
     to { opacity: 0.3; }
   }
-  .version-badge {
-    position: fixed;
-    bottom: 10px;
-    right: 12px;
-    background: #ffffff;
-    color: #222222;
-    border: 2px solid #222222;
-    border-radius: 12px;
-    padding: 3px 10px;
-    font-size: 11px;
-    font-weight: bold;
-    box-shadow: 0 2px 0 #222222;
-    pointer-events: none;
-  }
 
   /* カード枠 */
   .panel-card {
     background: #ffffff;
     border: 3px solid #222222;
     border-radius: 18px;
-    padding: 10px 16px;
+    padding: 12px 18px;
     box-shadow: 0 5px 0 #222222;
     text-align: center;
     max-width: 96%;
-    max-height: 94%;
+    max-height: 92%;
     overflow-y: auto;
   }
   .panel-heading {
-    margin: 0 0 8px 0;
-    font-size: 14px;
+    margin: 0 0 10px 0;
+    font-size: 15px;
     font-weight: bold;
     color: #222222;
   }
@@ -210,16 +189,16 @@
     color: #ff3838;
   }
   .pass-input, .count-select {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
     padding: 6px 10px;
     border: 3px solid #222222;
     border-radius: 10px;
     text-align: center;
-    min-width: 130px;
+    width: 140px;
   }
 
-  /* 透明色パレット選択画面 */
+  /* 透明色パレット選択画面（大きめ升目・小さめ文字） */
   #screen-transparent .panel-card {
     width: 96%;
     height: 90%;
@@ -273,17 +252,14 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.78);
+    background: rgba(0, 0, 0, 0.75);
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    padding: 8px;
+    padding: 10px;
   }
   .modal-bg.open {
     display: flex;
-  }
-  #modal-unsaved-warn {
-    z-index: 1200;
   }
   .big-swatch {
     width: 100px;
@@ -307,7 +283,7 @@
     flex: 1;
     height: 100%;
     position: relative;
-    background: #6c757d;
+    background: #575757;
     border: 2px solid #222222;
     border-radius: 10px;
     overflow: hidden;
@@ -322,6 +298,13 @@
     height: 300px;
     transform-origin: center center;
     background-color: #ffffff;
+    background-image:
+      linear-gradient(45deg, #cccccc 25%, transparent 25%),
+      linear-gradient(-45deg, #cccccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #cccccc 75%),
+      linear-gradient(-45deg, transparent 75%, #cccccc 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   }
   #paint-canvas, #grid-overlay-canvas {
@@ -462,203 +445,17 @@
     pointer-events: none;
   }
 
-  /* プレビュー＆点線サイズ調整枠（市松模様で透過を可視化） */
-  .preview-box-wrap {
-    position: relative;
-    display: inline-block;
-    max-width: 100%;
-    max-height: 36vh;
-    aspect-ratio: 480 / 300;
-    margin: 0 auto 6px auto;
-    touch-action: none;
-    background-image:
-      linear-gradient(45deg, #dcdde1 25%, transparent 25%),
-      linear-gradient(-45deg, #dcdde1 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #dcdde1 75%),
-      linear-gradient(-45deg, transparent 75%, #dcdde1 75%);
-    background-size: 16px 16px;
-    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-    background-color: #ffffff;
-  }
+  /* プレビュー画面 */
   #preview-stage {
     border: 3px solid #222222;
-    background: transparent;
-    width: 100%;
-    height: 100%;
+    background: #ffffff;
+    max-width: 100%;
+    max-height: 42vh;
+    width: auto;
+    height: auto;
+    aspect-ratio: 480 / 300;
     display: block;
-  }
-  #crop-dashed-rect {
-    display: none;
-    position: absolute;
-    border: 3px dashed #ff3838;
-    background: rgba(255, 56, 56, 0.14);
-    pointer-events: none;
-    transform-origin: center center;
-  }
-  #crop-dashed-rect.active {
-    display: block;
-  }
-  #crop-confirm-bar {
-    display: none;
-    background: #fff3cd;
-    border: 2px solid #222222;
-    border-radius: 10px;
-    padding: 4px 8px;
-    margin-bottom: 6px;
-    font-size: 11px;
-    font-weight: bold;
-  }
-  #crop-confirm-bar.active {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .option-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin: 4px 0;
-    font-size: 11px;
-    font-weight: bold;
-  }
-  .mini-pill {
-    padding: 3px 8px;
-    border: 2px solid #222222;
-    border-radius: 10px;
-    background: #f1f2f6;
-    color: #222222;
-    font-size: 10px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .mini-pill.active {
-    background: #1e90ff;
-    color: #ffffff;
-  }
-
-  /* ポケカラ縦3枠プレビュー画面 */
-  #screen-poke-preview {
-    background: #222222;
-    flex-direction: row;
-    gap: 12px;
-  }
-  #poke-phone-frame {
-    width: 240px;
-    height: 92vh;
-    max-height: 520px;
-    background: #ffffff;
-    border: 4px solid #ffffff;
-    border-radius: 22px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
-  }
-  #poke-preview-canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-  #poke-control-panel {
-    max-width: 340px;
-    text-align: left;
-  }
-
-  /* PV合体編集画面 */
-  #screen-pv {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: stretch;
-    background: #2f3542;
-    padding: 6px;
-    gap: 6px;
-  }
-  #pv-stage-wrap {
-    flex: 1;
-    height: 100%;
-    background: #6c757d;
-    border: 2px solid #222222;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    touch-action: none;
-    position: relative;
-  }
-  #pv-top-hud {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    right: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 6px;
-    z-index: 20;
-    pointer-events: none;
-  }
-  .hud-badge {
-    background: rgba(0, 0, 0, 0.78);
-    color: #ffffff;
-    font-size: 11px;
-    font-weight: bold;
-    padding: 3px 9px;
-    border-radius: 10px;
-    pointer-events: auto;
-  }
-  #pv-canvas {
-    width: 480px;
-    height: 300px;
-    background: #ffffff;
-    border: 3px solid #222222;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  }
-  #pv-side {
-    width: 235px;
-    height: 100%;
-    background: #ffffff;
-    border: 3px solid #222222;
-    border-radius: 10px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex-shrink: 0;
-  }
-  #stamp-list {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    border: 2px solid #222222;
-    border-radius: 8px;
-    padding: 4px;
-    background: #f8f9fa;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .stamp-item {
-    border: 2px solid #222222;
-    border-radius: 8px;
-    padding: 4px;
-    background: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    font-size: 10px;
-    font-weight: bold;
-  }
-  .stamp-item.selected-stamp {
-    background: #ffde59;
-    border-color: #ff3838;
+    margin: 0 auto 6px auto;
   }
 </style>
 </head>
@@ -668,7 +465,7 @@
 <div id="portrait-overlay">
   <div class="rotate-mark">↻</div>
   <div style="font-size:16px; font-weight:bold; margin-bottom:6px;">スマホは横画面専用です</div>
-  <div style="font-size:12px;">横向きにするか、上部の「PC」切替を押してください</div>
+  <div style="font-size:12px;">横向きにするか、右上の「PC」切替を押してください</div>
 </div>
 
 <!-- スマホ／PC切替スイッチ -->
@@ -682,7 +479,6 @@
 <div id="screen-title" class="screen active">
   <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
   <div class="blink-start" id="btn-title-start">スタート</div>
-  <div class="version-badge" id="app-version-badge">Ver 1.4.3</div>
 </div>
 
 <!-- 2. メニュー1：人数選択 -->
@@ -690,15 +486,14 @@
   <div class="panel-card">
     <h2 class="panel-heading">モード選択</h2>
     <button type="button" class="pop-btn blue" onclick="chooseMode1('single')">① 一人</button>
-    <button type="button" class="pop-btn purple" onclick="chooseMode1('multi')">② マルチ（最大3人・PeerJS）</button>
+    <button type="button" class="pop-btn purple" onclick="chooseMode1('multi')">② マルチ（5人まで）</button>
   </div>
 </div>
 
 <!-- 2-2. マルチ：ホスト／ゲスト -->
 <div id="screen-multi-role" class="screen">
   <div class="panel-card">
-    <h2 class="panel-heading">マルチプレイ（最大3人）</h2>
-    <div id="peer-net-status" style="font-size:10px; color:#555; margin-bottom:6px;">PeerJS区切り同期モード準備完了</div>
+    <h2 class="panel-heading">マルチプレイ</h2>
     <button type="button" class="pop-btn" onclick="showScreen('screen-host-count')">ホスト</button>
     <button type="button" class="pop-btn blue" onclick="showScreen('screen-guest-pass')">ゲスト</button>
     <br>
@@ -706,13 +501,15 @@
   </div>
 </div>
 
-<!-- 2-3. ホスト：人数選択（2〜3人） -->
+<!-- 2-3. ホスト：人数選択 -->
 <div id="screen-host-count" class="screen">
   <div class="panel-card">
-    <h2 class="panel-heading">何人で遊ぶ？（最大3人）</h2>
+    <h2 class="panel-heading">何人で遊ぶ？（2〜5人）</h2>
     <select id="select-players" class="count-select">
       <option value="2">2人</option>
-      <option value="3" selected>3人</option>
+      <option value="3">3人</option>
+      <option value="4">4人</option>
+      <option value="5">5人</option>
     </select>
     <br><br>
     <button type="button" class="pop-btn green" onclick="makeHostRoom()">決定</button>
@@ -725,7 +522,7 @@
   <div class="panel-card">
     <h2 class="panel-heading">4桁パス（接続まち）</h2>
     <div class="pass-box" id="room-pass-text">0000</div>
-    <div id="host-wait-label" style="font-size:12px; margin-bottom:8px;">接続まち... (1/3人)</div>
+    <div id="host-wait-label" style="font-size:12px; margin-bottom:8px;">接続まち... (1/2人)</div>
     <button type="button" class="pop-btn green" onclick="showScreen('screen-menu2')">全員接続して次へ</button>
   </div>
 </div>
@@ -745,7 +542,7 @@
 <div id="screen-guest-wait" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">待機中</h2>
-    <div id="guest-wait-msg" style="font-size:12px; margin-bottom:10px;">つながりました。開始を待っています...</div>
+    <div style="font-size:12px; margin-bottom:10px;">つながりました。開始を待っています...</div>
     <button type="button" class="pop-btn green" style="font-size:12px;" onclick="showScreen('screen-menu2')">（次へ進む）</button>
   </div>
 </div>
@@ -754,19 +551,18 @@
 <div id="screen-menu2" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">ゲームモード選択</h2>
-    <div id="menu2-status" style="font-size:11px; color:#444; margin-bottom:6px;"></div>
-    <button type="button" class="pop-btn" onclick="chooseGameMode('anim')">（１）アニメーション素材（最大10枚）</button><br>
-    <button type="button" class="pop-btn blue" onclick="chooseGameMode('bg')">（２）背景（最大3枚横長・最大3個登録）</button><br>
-    <button type="button" class="pop-btn purple" onclick="openPvModeSelect()">（３）PV（合体）</button>
+    <button type="button" class="pop-btn" onclick="chooseGameMode('anim')">（１）アニメーション素材</button><br>
+    <button type="button" class="pop-btn blue" onclick="chooseGameMode('bg')">（２）背景</button><br>
+    <button type="button" class="pop-btn purple" onclick="alert('（３）PV（合体）はアニメ素材・背景作成後に組み合わせるモードです')">（３）PV（合体）</button>
   </div>
 </div>
 
-<!-- 4. 透明色選択 -->
+<!-- 4. 透明色選択（250色パレット・大きめ表示） -->
 <div id="screen-transparent" class="screen">
   <div class="panel-card">
     <div class="trans-top">
       <div>
-        <div class="trans-top-title">透明色を選択（お絵描き中は白キャンバス・出力/合成時に透過）</div>
+        <div class="trans-top-title">透明色を選択</div>
         <div class="trans-top-note">タップすると拡大確認が出ます（選択色はパレットで選択不可）</div>
       </div>
       <button type="button" class="pop-btn gray" style="font-size:11px; padding:4px 10px; margin:0;" onclick="showScreen('screen-menu2')">もどる</button>
@@ -778,7 +574,7 @@
 <!-- 4-2. 透明色確認ダイアログ -->
 <div id="modal-trans-confirm" class="modal-bg">
   <div class="panel-card">
-    <div style="font-size:13px; font-weight:bold;">この色を透明色に指定しますか？</div>
+    <div style="font-size:13px; font-weight:bold;">この色で良いですか？</div>
     <div id="trans-big-box" class="big-swatch"></div>
     <div id="trans-hex-label" style="font-size:11px; color:#444; margin-bottom:6px;"></div>
     <button type="button" class="pop-btn green" style="padding:6px 18px; font-size:13px;" onclick="confirmTrans(true)">はい</button>
@@ -786,7 +582,7 @@
   </div>
 </div>
 
-<!-- 5. お絵描き画面 -->
+<!-- 5. お絵描き画面（480×300固定） -->
 <div id="screen-draw" class="screen">
   <div id="canvas-area">
     <div class="canvas-tag" id="frame-info">1枚目 / 最大10枚</div>
@@ -809,7 +605,7 @@
         塗つぶし<span class="t-sub" id="lbl-fill">標準</span>
       </button>
       <button type="button" class="t-btn" id="btn-tool-grid" onclick="toggleGrid()">
-        グリッド<span class="t-sub">60×60</span>
+        グリッド<span class="t-sub">72×60</span>
       </button>
       <button type="button" class="t-btn" onclick="doUndo()">
         ←<span class="t-sub">戻す</span>
@@ -821,10 +617,10 @@
         保存<span class="t-sub">PNG</span>
       </button>
       <button type="button" class="t-btn" id="btn-next-page" onclick="goNextFrame()">
-        次へ<span class="t-sub" id="lbl-next-limit">最大10枚</span>
+        次へ<span class="t-sub">最大10枚</span>
       </button>
-      <button type="button" class="t-btn" id="btn-draw-done" style="background:#2ed573;" onclick="onDrawDoneClicked()">
-        完了<span class="t-sub">プレビュー</span>
+      <button type="button" class="t-btn" style="background:#2ed573;" onclick="openAnimPreview()">
+        完了<span class="t-sub">再生</span>
       </button>
     </div>
 
@@ -833,209 +629,21 @@
   </div>
 </div>
 
-<!-- 6. プレビュー画面 -->
+<!-- 6. アニメーションプレビュー画面 -->
 <div id="modal-preview" class="modal-bg">
   <div class="panel-card">
-    <div style="font-size:13px; font-weight:bold; margin-bottom:4px;" id="preview-modal-title">プレビュー</div>
-
-    <div class="preview-box-wrap" id="preview-crop-area">
-      <canvas id="preview-stage" width="480" height="300"></canvas>
-      <div id="crop-dashed-rect"></div>
+    <div style="font-size:13px; font-weight:bold; margin-bottom:4px;">アニメーションプレビュー</div>
+    <canvas id="preview-stage" width="480" height="300"></canvas>
+    <div style="font-size:11px; font-weight:bold; margin-bottom:6px;">
+      スピード: <span id="speed-val">200</span>ms<br>
+      <input type="range" id="speed-range" min="50" max="1000" step="50" value="200" style="width:180px;" oninput="changeSpeed(this.value)">
     </div>
-
-    <div id="crop-confirm-bar">
-      <span>ピンチイン/アウトで枠調整</span>
-      <button type="button" class="pop-btn green" style="padding:3px 10px; font-size:11px; margin:0;" onclick="applyCropSize()">OK</button>
-      <button type="button" class="pop-btn gray" style="padding:3px 10px; font-size:11px; margin:0;" onclick="cancelCropSize()">取消</button>
-    </div>
-
-    <div id="bg-anim-options" style="display:none;">
-      <div class="option-row">
-        <span>条件:</span>
-        <button type="button" class="mini-pill active" id="bg-cond-seq" onclick="setBgCondition('sequence')">横長1枚絵</button>
-        <button type="button" class="mini-pill" id="bg-cond-h" onclick="setBgCondition('horizontal')">横スクロール</button>
-        <button type="button" class="mini-pill" id="bg-cond-v" onclick="setBgCondition('vertical')">縦スクロール</button>
-      </div>
-      <div class="option-row" id="bg-dir-row" style="display:none;">
-        <span>向き:</span>
-        <button type="button" class="mini-pill active" id="bg-dir-1" onclick="setBgDirection('pos')">右 / 下</button>
-        <button type="button" class="mini-pill" id="bg-dir-2" onclick="setBgDirection('neg')">左 / 上</button>
-      </div>
-    </div>
-
-    <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">
-      スピード: <span id="speed-val">200</span>ms
-      <input type="range" id="speed-range" min="50" max="1000" step="50" value="200" style="width:140px; vertical-align:middle;" oninput="changeSpeed(this.value)">
-    </div>
-
-    <div id="preview-action-buttons">
-      <button type="button" class="pop-btn orange" id="btn-pv-crop" style="padding:5px 10px; font-size:11px;" onclick="startCropSizeMode()">サイズ調整</button>
-      <button type="button" class="pop-btn purple" id="btn-pv-stamp" style="padding:5px 10px; font-size:11px;" onclick="registerStamp()">スタンプ登録</button>
-      <button type="button" class="pop-btn blue" id="btn-pv-bg-reg" style="display:none; padding:5px 10px; font-size:11px;" onclick="registerBackgroundAsset()">背景登録（最大3個）</button>
-      <button type="button" class="pop-btn orange" id="btn-pv-gif" style="display:none; padding:5px 10px; font-size:11px;" onclick="saveBackgroundGIF()">GIF保存</button>
-      <button type="button" class="pop-btn green" id="btn-pv-save" style="padding:5px 10px; font-size:11px;" onclick="savePreviewAsset()">PNG保存</button>
-      <button type="button" class="pop-btn" id="btn-pv-complete" style="padding:5px 10px; font-size:11px;" onclick="onPreviewCompleteClicked()">完了</button>
-      <button type="button" class="pop-btn gray" style="padding:5px 10px; font-size:11px;" onclick="closeAnimPreview()">もどる</button>
-    </div>
+    <button type="button" class="pop-btn green" style="padding:6px 14px; font-size:12px;" onclick="saveAnimationFile()">保存</button>
+    <button type="button" class="pop-btn gray" style="padding:6px 14px; font-size:12px;" onclick="closeAnimPreview()">もどる</button>
   </div>
 </div>
 
-<!-- 6-2. スタンプ未保存警告ポップアップ -->
-<div id="modal-unsaved-warn" class="modal-bg">
-  <div class="panel-card">
-    <div style="font-size:14px; font-weight:bold; color:#ff3838; margin-bottom:6px;">⚠ スタンプが保存（登録）されていません！</div>
-    <div style="font-size:12px; color:#333; margin-bottom:10px;">
-      「スタンプ登録」を押さずに完了すると、今回のスタンプはPV画面で使えません。<br>このまま終了しますか？
-    </div>
-    <button type="button" class="pop-btn green" style="padding:6px 14px; font-size:12px;" onclick="closeUnsavedWarnAndRegister()">登録しにもどる</button>
-    <button type="button" class="pop-btn gray" style="padding:6px 14px; font-size:12px;" onclick="forceCompletePreviewSession()">そのまま完了</button>
-  </div>
-</div>
-
-<!-- 7-0. （３）PV（合体）モード選択 -->
-<div id="screen-pv-select" class="screen">
-  <div class="panel-card">
-    <h2 class="panel-heading">（３）PV（合体）モード選択</h2>
-    <button type="button" class="pop-btn orange" onclick="openPokeSetup()">① ポケカラ用（縦3枠）</button><br>
-    <button type="button" class="pop-btn gray" style="font-size:12px; padding:5px 14px;" onclick="showScreen('screen-menu2')">もどる</button>
-  </div>
-</div>
-
-<!-- 7-1. ①ポケカラ用（縦3枠）上段・中段・下段割り当て設定（「なし」選択可） -->
-<div id="screen-poke-setup" class="screen">
-  <div class="panel-card">
-    <h2 class="panel-heading">ポケカラ用（縦3枠）背景割り当て</h2>
-    <div style="font-size:11px; color:#555; margin-bottom:6px;">上段・中段・下段ごとに背景（最大3個）または「なし」を選べます</div>
-    <div id="poke-slot-selectors" style="text-align:left; font-size:12px; margin-bottom:8px;"></div>
-    <button type="button" class="pop-btn green" onclick="buildPokeVerticalPreview()">OK（縦プレビューへ）</button>
-    <button type="button" class="pop-btn gray" onclick="showScreen('screen-pv-select')">もどる</button>
-  </div>
-</div>
-
-<!-- 7-2. ポケカラ用 縦画面フィットプレビュー -->
-<div id="screen-poke-preview" class="screen">
-  <div id="poke-phone-frame">
-    <canvas id="poke-preview-canvas" width="240" height="480"></canvas>
-  </div>
-  <div class="panel-card" id="poke-control-panel">
-    <h2 class="panel-heading">縦枠合体プレビュー</h2>
-    <div style="font-size:11px; color:#444; margin-bottom:6px;">
-      ※「なし」の段は非表示（白/透明）になります。横長背景も隙間0でループ再生します。
-    </div>
-    <div class="option-row">
-      <button type="button" class="mini-pill active" id="poke-scroll-toggle" onclick="togglePokeScroll()">スクロール: ON</button>
-    </div>
-    <div class="option-row">
-      <span>軸:</span>
-      <button type="button" class="mini-pill active" id="poke-axis-v" onclick="setPokeAxis('v')">縦</button>
-      <button type="button" class="mini-pill" id="poke-axis-h" onclick="setPokeAxis('h')">横</button>
-    </div>
-    <div class="option-row" id="poke-dir-h-row" style="display:none;">
-      <span>横向き:</span>
-      <button type="button" class="mini-pill active" id="poke-h-right" onclick="setPokeDir('right')">右</button>
-      <button type="button" class="mini-pill" id="poke-h-left" onclick="setPokeDir('left')">左</button>
-    </div>
-    <div class="option-row" id="poke-dir-v-row">
-      <span>縦向き:</span>
-      <button type="button" class="mini-pill active" id="poke-v-up" onclick="setPokeDir('up')">上</button>
-      <button type="button" class="mini-pill" id="poke-v-down" onclick="setPokeDir('down')">下</button>
-    </div>
-    <div style="margin-top:8px;">
-      <button type="button" class="pop-btn green" onclick="confirmPokePreviewAndStartTimer()">OK（スタンプ編集へ）</button>
-      <button type="button" class="pop-btn gray" onclick="showScreen('screen-poke-setup')">もどる</button>
-    </div>
-  </div>
-</div>
-
-<!-- 7-3. 制限時間選択（1〜5分） -->
-<div id="screen-pv-timer-setup" class="screen">
-  <div class="panel-card">
-    <h2 class="panel-heading">編集の制限時間を選択（1〜5分）</h2>
-    <select id="select-pv-minutes" class="count-select">
-      <option value="1">1分</option>
-      <option value="2">2分</option>
-      <option value="3">3分</option>
-      <option value="4">4分</option>
-      <option value="5">5分</option>
-    </select>
-    <br><br>
-    <button type="button" class="pop-btn green" onclick="startPvEditingSession()">各自編集を開始</button>
-    <button type="button" class="pop-btn gray" onclick="showScreen('screen-pv-select')">もどる</button>
-  </div>
-</div>
-
-<!-- 7-4. （３）PV（合体）編集画面 -->
-<div id="screen-pv" class="screen">
-  <div id="pv-stage-wrap">
-    <div id="pv-top-hud">
-      <div class="hud-badge" id="pv-timer-badge">残り 01:00</div>
-      <div class="hud-badge" id="pv-target-badge">対象: 上段 / 1枚目</div>
-      <button type="button" class="mini-pill" style="pointer-events:auto;" onclick="finishPvEditingRound()">時間終了・合体へ</button>
-    </div>
-    <canvas id="pv-canvas" width="480" height="300"></canvas>
-  </div>
-  <div id="pv-side">
-    <div style="font-size:11px; font-weight:bold; text-align:center;">段・コマ選択</div>
-    <div class="option-row">
-      <button type="button" class="mini-pill active" id="pv-tier-1" onclick="setPvTier(0)">上段</button>
-      <button type="button" class="mini-pill" id="pv-tier-2" onclick="setPvTier(1)">中段</button>
-      <button type="button" class="mini-pill" id="pv-tier-3" onclick="setPvTier(2)">下段</button>
-    </div>
-    <div class="option-row">
-      <button type="button" class="mini-pill active" id="pv-slot-1" onclick="setPvSlot(0)">1枚目</button>
-      <button type="button" class="mini-pill" id="pv-slot-2" onclick="setPvSlot(1)">2枚目</button>
-      <button type="button" class="mini-pill" id="pv-slot-3" onclick="setPvSlot(2)">3枚目</button>
-    </div>
-    <div style="font-size:11px; font-weight:bold; text-align:center;">共有スタンプ（最大10種）</div>
-    <div id="stamp-list"></div>
-    <button type="button" class="pop-btn blue" style="padding:5px 8px; font-size:11px; margin:0;" onclick="placeSelectedStamp()">スタンプ配置</button>
-    <button type="button" class="pop-btn gray" style="padding:4px 8px; font-size:10px; margin:0;" onclick="finishPvEditingRound()">強制終了して合体確認</button>
-  </div>
-</div>
-
-<!-- 8. 合体プレビュー確認＆追加／終了／MP4保存フロー -->
-<div id="modal-pv-round-result" class="modal-bg">
-  <div class="panel-card" style="max-width:460px;">
-    <div style="font-size:14px; font-weight:bold; margin-bottom:4px;">合体アニメーションプレビュー</div>
-    <canvas id="pv-result-canvas" width="360" height="225" style="border:3px solid #222; background:#fff; max-width:100%;"></canvas>
-
-    <!-- ゲスト向け：追加または終了 -->
-    <div id="pv-guest-choice-box" style="display:none; margin-top:8px;">
-      <div style="font-size:12px; font-weight:bold; margin-bottom:4px;">編集を追加しますか？終了しますか？</div>
-      <button type="button" class="pop-btn blue" onclick="guestChooseAdd()">追加</button>
-      <button type="button" class="pop-btn gray" onclick="guestChooseEnd()">終了</button>
-    </div>
-
-    <!-- ゲストが「追加」を押したときの希望時間選択 -->
-    <div id="pv-guest-add-time-box" style="display:none; margin-top:8px;">
-      <div style="font-size:12px; font-weight:bold; margin-bottom:4px;">希望する追加制限時間を選択（1〜5分）</div>
-      <select id="select-guest-add-min" class="count-select">
-        <option value="1">1分</option>
-        <option value="2">2分</option>
-        <option value="3">3分</option>
-        <option value="4">4分</option>
-        <option value="5">5分</option>
-      </select>
-      <button type="button" class="pop-btn green" onclick="submitGuestAddRequest()">決定してホストへ送信</button>
-    </div>
-
-    <!-- ホスト／一人モード向け：希望結果確認＆追加または保存 -->
-    <div id="pv-host-decision-box" style="display:none; margin-top:8px;">
-      <div id="pv-host-requests-summary" style="font-size:11px; background:#f1f2f6; border:2px solid #222; border-radius:8px; padding:6px; margin-bottom:6px; text-align:left;"></div>
-      <button type="button" class="pop-btn orange" onclick="hostChooseAddMore()">追加</button>
-      <button type="button" class="pop-btn green" id="btn-record-mp4" onclick="hostChooseSaveMp4()">保存（MP4録画）</button>
-    </div>
-
-    <!-- 保存完了後：各自保存先選択＆タイトル戻り -->
-    <div id="pv-final-save-box" style="display:none; margin-top:8px;">
-      <div id="pv-mp4-status" style="font-size:12px; font-weight:bold; color:#1e90ff; margin-bottom:6px;"></div>
-      <button type="button" class="pop-btn green" onclick="chooseSaveLocationAndReturn()">保存先を選んで保存（タイトルへ）</button>
-      <button type="button" class="pop-btn gray" onclick="returnToTitleImmediately()">終了（タイトルへ）</button>
-    </div>
-  </div>
-</div>
-
-<!-- 9. 保存後メニュー戻り確認ダイアログ -->
+<!-- 7. 保存後メニュー戻り確認ダイアログ -->
 <div id="modal-saved-dialog" class="modal-bg">
   <div class="panel-card">
     <div style="font-size:14px; font-weight:bold; margin-bottom:8px;">メニュー画面へ戻りますか？</div>
@@ -1047,9 +655,6 @@
 <script>
 (function() {
   "use strict";
-
-  var APP_VERSION = "Ver 1.4.3";
-  document.getElementById("app-version-badge").textContent = APP_VERSION;
 
   /* ----------------------------
      カラーパレット（250色）生成
@@ -1092,36 +697,12 @@
     return "#" + to2(r) + to2(gr) + to2(b);
   }
 
-  function hexToRgb(hex) {
-    if (!hex || hex.length < 7) return null;
-    return {
-      r: parseInt(hex.slice(1, 3), 16),
-      g: parseInt(hex.slice(3, 5), 16),
-      b: parseInt(hex.slice(5, 7), 16)
-    };
-  }
-
   /* ----------------------------
-     セッション保持データ＆PeerJS区切り同期
+     アプリ状態
   ---------------------------- */
-  var MAX_STAMPS = 10;
-  var MAX_BG_ASSETS = 3;
-  var registeredStamps = [];
-  var bgAssets = []; // 最大3個まで登録できる横長1枚絵背景素材
-  var stampRegisteredInCurrentSession = false;
-
-  var peerInstance = null;
-  var peerConns = [];
-  var peerConnectedCount = 1;
-  var guestRequests = [];
-
   var state = {
     device: "pc",
     playMode: "single",
-    role: "host",
-    playerCount: 3,
-    myPlayerId: 1,
-    roomPass: "",
     gameMode: "anim",
     transparentColor: null,
     tempTransparentColor: null,
@@ -1131,173 +712,11 @@
     eraserSize: 10,
     fillTol: 25,
     gridOn: false,
-    canvasW: 480,
-    canvasH: 300,
     frames: [],
     frameIdx: 0,
     undoList: [],
-    redoList: [],
-    bgCondition: "sequence",
-    bgDirection: "pos"
+    redoList: []
   };
-
-  function safeSendPeer(payload) {
-    if (state.playMode !== "multi" || !peerConns || peerConns.length === 0) return;
-    for (var i = 0; i < peerConns.length; i++) {
-      try {
-        if (peerConns[i] && peerConns[i].open) {
-          peerConns[i].send(payload);
-        }
-      } catch (e) {}
-    }
-  }
-
-  function handlePeerMessage(msg) {
-    if (!msg || typeof msg !== "object") return;
-    if (msg.type === "stamp_share" && msg.stamp) {
-      if (registeredStamps.length < MAX_STAMPS) {
-        var restoredFrames = msg.stamp.frames.map(function(f) {
-          return new ImageData(new Uint8ClampedArray(f.data), f.width, f.height);
-        });
-        registeredStamps.push({
-          id: msg.stamp.id,
-          name: msg.stamp.name,
-          ownerPlayerId: msg.stamp.ownerPlayerId,
-          width: msg.stamp.width,
-          height: msg.stamp.height,
-          speed: msg.stamp.speed,
-          transparentColor: msg.stamp.transparentColor,
-          frames: restoredFrames
-        });
-        updateMenu2Status();
-        renderStampList();
-      }
-    } else if (msg.type === "guest_decision") {
-      guestRequests.push({
-        playerId: msg.playerId || 2,
-        action: msg.action,
-        minutes: msg.minutes || 0
-      });
-      refreshHostRequestsSummary();
-    } else if (msg.type === "round_start") {
-      startPvEditingSession(msg.minutes || 1, true);
-    } else if (msg.type === "round_finish") {
-      finishPvEditingRound(true);
-    } else if (msg.type === "save_ready") {
-      document.getElementById("pv-host-decision-box").style.display = "none";
-      document.getElementById("pv-guest-choice-box").style.display = "none";
-      document.getElementById("pv-final-save-box").style.display = "block";
-      document.getElementById("pv-mp4-status").textContent = "ホストが保存フェーズへ進みました。保存先を選んで保存してください。";
-    }
-  }
-
-  function initPeerAsHost(pass) {
-    if (typeof Peer === "undefined") {
-      document.getElementById("peer-net-status").textContent = "オフライン／ローカル互換モードで動作中";
-      return;
-    }
-    try {
-      if (peerInstance) peerInstance.destroy();
-      peerConns = [];
-      peerConnectedCount = 1;
-      peerInstance = new Peer("wing-pv-room-" + pass);
-      peerInstance.on("connection", function(conn) {
-        if (peerConnectedCount >= state.playerCount) {
-          conn.close();
-          return;
-        }
-        peerConns.push(conn);
-        peerConnectedCount++;
-        document.getElementById("host-wait-label").textContent = "接続まち... (" + peerConnectedCount + "/" + state.playerCount + "人)";
-        conn.on("data", handlePeerMessage);
-      });
-      peerInstance.on("error", function() {
-        document.getElementById("host-wait-label").textContent = "ローカル同期モード (" + peerConnectedCount + "/" + state.playerCount + "人)";
-      });
-    } catch (e) {}
-  }
-
-  function initPeerAsGuest(pass, onDone) {
-    if (typeof Peer === "undefined") {
-      onDone("ローカル互換モードで接続しました。");
-      return;
-    }
-    try {
-      if (peerInstance) peerInstance.destroy();
-      peerConns = [];
-      peerInstance = new Peer();
-      peerInstance.on("open", function() {
-        var conn = peerInstance.connect("wing-pv-room-" + pass);
-        peerConns.push(conn);
-        conn.on("open", function() {
-          onDone("ホスト（パス:" + pass + "）とつながりました。");
-        });
-        conn.on("data", handlePeerMessage);
-        setTimeout(function() {
-          if (!conn.open) {
-            onDone("待機中（通信再試行／ローカル互換モード）");
-          }
-        }, 2500);
-      });
-      peerInstance.on("error", function() {
-        onDone("ローカル互換モードで待機中...");
-      });
-    } catch (e) {
-      onDone("ローカル互換モードで待機中...");
-    }
-  }
-
-  function cloneImageDataList(list) {
-    return list.map(function(src) {
-      return new ImageData(new Uint8ClampedArray(src.data), src.width, src.height);
-    });
-  }
-
-  /* 透過色を適用したキャンバスを生成（お絵描き画面は白のまま保持し、出力・合成・プレビューで透過適用） */
-  function createTransparentFrameCanvas(imgData, transHex) {
-    var c = document.createElement("canvas");
-    c.width = imgData.width;
-    c.height = imgData.height;
-    var ctx = c.getContext("2d");
-    var copy = new ImageData(new Uint8ClampedArray(imgData.data), imgData.width, imgData.height);
-    var rgb = hexToRgb(transHex);
-    if (rgb) {
-      var px = copy.data;
-      for (var i = 0; i < px.length; i += 4) {
-        if (Math.abs(px[i] - rgb.r) <= 4 && Math.abs(px[i + 1] - rgb.g) <= 4 && Math.abs(px[i + 2] - rgb.b) <= 4) {
-          px[i + 3] = 0;
-        }
-      }
-    }
-    ctx.putImageData(copy, 0, 0);
-    return c;
-  }
-
-  /* 最大3枚のキャンバスを横長1枚絵（幅 * 枚数 × 高さ）に連結 */
-  function buildHorizontalStripCanvas(framesArr, w, h, transHex) {
-    var n = framesArr.length;
-    var strip = document.createElement("canvas");
-    strip.width = w * n;
-    strip.height = h;
-    var sctx = strip.getContext("2d");
-    sctx.clearRect(0, 0, strip.width, strip.height);
-    for (var i = 0; i < n; i++) {
-      var fCan = transHex ? createTransparentFrameCanvas(framesArr[i], transHex) : (function() {
-        var tc = document.createElement("canvas");
-        tc.width = w;
-        tc.height = h;
-        tc.getContext("2d").putImageData(framesArr[i], 0, 0);
-        return tc;
-      })();
-      sctx.drawImage(fCan, i * w, 0);
-    }
-    return strip;
-  }
-
-  function updateMenu2Status() {
-    var stEl = document.getElementById("menu2-status");
-    stEl.textContent = "共有スタンプ: " + registeredStamps.length + "/" + MAX_STAMPS + "個 ｜ 登録背景: " + bgAssets.length + "/" + MAX_BG_ASSETS + "個";
-  }
 
   /* ----------------------------
      スマホ／PC判別＆縦画面チェック
@@ -1327,9 +746,8 @@
 
   function checkPortraitOverlay() {
     var ov = document.getElementById("portrait-overlay");
-    var activePokePreview = document.getElementById("screen-poke-preview").classList.contains("active");
     var isPortrait = window.innerHeight > window.innerWidth;
-    if (!activePokePreview && state.device === "mobile" && isPortrait) {
+    if (state.device === "mobile" && isPortrait) {
       ov.className = "show";
     } else {
       ov.className = "";
@@ -1340,24 +758,15 @@
      画面遷移
   ---------------------------- */
   window.showScreen = function(id) {
-    if (id === "screen-draw") {
-      document.body.classList.add("drawing-mode");
-    } else {
-      document.body.classList.remove("drawing-mode");
-    }
     var list = document.querySelectorAll(".screen");
     for (var i = 0; i < list.length; i++) {
       list[i].classList.remove("active");
     }
     var el = document.getElementById(id);
     if (el) el.classList.add("active");
-    if (id === "screen-menu2") {
-      updateMenu2Status();
-    }
     if (id === "screen-draw") {
       setTimeout(fitDrawCanvas, 20);
     }
-    checkPortraitOverlay();
   };
 
   document.getElementById("screen-title").addEventListener("click", function() {
@@ -1371,8 +780,6 @@
   window.chooseMode1 = function(m) {
     state.playMode = m;
     if (m === "single") {
-      state.role = "host";
-      state.myPlayerId = 1;
       window.showScreen("screen-menu2");
     } else {
       window.showScreen("screen-multi-role");
@@ -1380,15 +787,10 @@
   };
 
   window.makeHostRoom = function() {
-    state.role = "host";
-    state.myPlayerId = 1;
-    var cnt = parseInt(document.getElementById("select-players").value, 10) || 3;
-    state.playerCount = Math.min(3, Math.max(2, cnt));
+    var cnt = document.getElementById("select-players").value;
     var pass = String(Math.floor(1000 + Math.random() * 9000));
-    state.roomPass = pass;
     document.getElementById("room-pass-text").textContent = pass;
-    document.getElementById("host-wait-label").textContent = "接続まち... (1/" + state.playerCount + "人)";
-    initPeerAsHost(pass);
+    document.getElementById("host-wait-label").textContent = "接続まち... (1/" + cnt + "人)";
     window.showScreen("screen-host-wait");
   };
 
@@ -1398,29 +800,15 @@
       alert("4桁の数字を入力してください");
       return;
     }
-    state.role = "guest";
-    state.myPlayerId = 2;
-    state.roomPass = p;
-    document.getElementById("guest-wait-msg").textContent = "接続処理中...";
-    initPeerAsGuest(p, function(statusText) {
-      document.getElementById("guest-wait-msg").textContent = statusText;
-    });
     window.showScreen("screen-guest-wait");
   };
 
   window.chooseGameMode = function(gm) {
     state.gameMode = gm;
-    stampRegisteredInCurrentSession = false;
     if (gm === "anim") {
-      if (registeredStamps.length >= MAX_STAMPS) {
-        alert("アニメーションスタンプは最大" + MAX_STAMPS + "個まで登録できます。");
-      }
       buildTransparentPalette();
       window.showScreen("screen-transparent");
     } else {
-      if (bgAssets.length >= MAX_BG_ASSETS) {
-        alert("背景素材は最大" + MAX_BG_ASSETS + "個まで登録できます。登録時は最新の枠が上書きされます。");
-      }
       state.transparentColor = null;
       startPaintSession();
       window.showScreen("screen-draw");
@@ -1458,47 +846,27 @@
   };
 
   /* ----------------------------
-     お絵描き・GUI（描画中は白キャンバスでグリッド視認性を確保）
+     お絵描き・GUI
   ---------------------------- */
   var pCanvas = document.getElementById("paint-canvas");
   var pCtx = pCanvas.getContext("2d");
   var gCanvas = document.getElementById("grid-overlay-canvas");
   var gCtx = gCanvas.getContext("2d");
-  var cBox = document.getElementById("canvas-box");
-
-  function getMaxFramesForMode() {
-    return state.gameMode === "bg" ? 3 : 10;
-  }
-
-  function setCanvasDimensions(w, h) {
-    state.canvasW = w;
-    state.canvasH = h;
-    pCanvas.width = w;
-    pCanvas.height = h;
-    pCanvas.style.width = w + "px";
-    pCanvas.style.height = h + "px";
-    gCanvas.width = w;
-    gCanvas.height = h;
-    gCanvas.style.width = w + "px";
-    gCanvas.style.height = h + "px";
-    cBox.style.width = w + "px";
-    cBox.style.height = h + "px";
-    drawGrid();
-  }
 
   function startPaintSession() {
-    setCanvasDimensions(480, 300);
-    pCtx.fillStyle = "#ffffff";
-    pCtx.fillRect(0, 0, state.canvasW, state.canvasH);
-    var initImg = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    pCtx.clearRect(0, 0, 480, 300);
+    if (state.gameMode === "bg") {
+      pCtx.fillStyle = "#ffffff";
+      pCtx.fillRect(0, 0, 480, 300);
+    }
+    var initImg = pCtx.getImageData(0, 0, 480, 300);
     state.frames = [initImg];
     state.frameIdx = 0;
     state.undoList = [initImg];
     state.redoList = [];
-    var maxF = getMaxFramesForMode();
-    document.getElementById("lbl-next-limit").textContent = "最大" + maxF + "枚";
     refreshFrameLabel();
     buildSidePalette();
+    drawGrid();
     fitDrawCanvas();
   }
 
@@ -1601,23 +969,20 @@
   }
 
   function drawGrid() {
-    var w = state.canvasW;
-    var h = state.canvasH;
-    var step = 60;
-    gCtx.clearRect(0, 0, w, h);
-    gCtx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+    gCtx.clearRect(0, 0, 480, 300);
+    gCtx.strokeStyle = "rgba(0,0,0,0.35)";
     gCtx.lineWidth = 1;
-    gCtx.setLineDash([4, 4]);
-    for (var x = step; x < w; x += step) {
+    gCtx.setLineDash([3, 3]);
+    for (var x = 60; x < 480; x += 60) {
       gCtx.beginPath();
       gCtx.moveTo(x, 0);
-      gCtx.lineTo(x, h);
+      gCtx.lineTo(x, 300);
       gCtx.stroke();
     }
-    for (var y = step; y < h; y += step) {
+    for (var y = 72; y < 300; y += 72) {
       gCtx.beginPath();
       gCtx.moveTo(0, y);
-      gCtx.lineTo(w, y);
+      gCtx.lineTo(480, y);
       gCtx.stroke();
     }
   }
@@ -1629,7 +994,7 @@
   };
 
   function pushUndo() {
-    var snap = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    var snap = pCtx.getImageData(0, 0, 480, 300);
     state.undoList.push(snap);
     if (state.undoList.length > 25) state.undoList.shift();
     state.redoList = [];
@@ -1657,6 +1022,7 @@
      フィット＆ピンチズーム＆描画
   ---------------------------- */
   var cArea = document.getElementById("canvas-area");
+  var cBox = document.getElementById("canvas-box");
   var fitScale = 1;
   var userScale = 1;
   var drawing = false;
@@ -1668,7 +1034,7 @@
     var aw = cArea.clientWidth - 12;
     var ah = cArea.clientHeight - 12;
     if (aw <= 0 || ah <= 0) return;
-    fitScale = Math.min(aw / state.canvasW, ah / state.canvasH, 1.5);
+    fitScale = Math.min(aw / 480, ah / 300, 1.5);
     window.resetCanvasView();
   }
 
@@ -1684,13 +1050,13 @@
   function toLocalXY(cx, cy) {
     var r = pCanvas.getBoundingClientRect();
     return {
-      x: Math.floor((cx - r.left) * (state.canvasW / r.width)),
-      y: Math.floor((cy - r.top) * (state.canvasH / r.height))
+      x: Math.floor((cx - r.left) * (480 / r.width)),
+      y: Math.floor((cy - r.top) * (300 / r.height))
     };
   }
 
   function strokeStart(x, y) {
-    if (x < 0 || x >= state.canvasW || y < 0 || y >= state.canvasH) return;
+    if (x < 0 || x >= 480 || y < 0 || y >= 300) return;
     if (state.tool === "fill") {
       floodFillCanvas(x, y, state.drawColor, state.fillTol);
       pushUndo();
@@ -1711,8 +1077,7 @@
       pCtx.strokeStyle = state.drawColor;
       pCtx.lineWidth = state.penSize;
     } else if (state.tool === "eraser") {
-      pCtx.globalCompositeOperation = "source-over";
-      pCtx.strokeStyle = "#ffffff";
+      pCtx.globalCompositeOperation = "destination-out";
       pCtx.lineWidth = state.eraserSize;
     }
     pCtx.beginPath();
@@ -1731,8 +1096,7 @@
       pCtx.arc(x, y, state.penSize / 2, 0, Math.PI * 2);
       pCtx.fill();
     } else if (state.tool === "eraser") {
-      pCtx.globalCompositeOperation = "source-over";
-      pCtx.fillStyle = "#ffffff";
+      pCtx.globalCompositeOperation = "destination-out";
       pCtx.beginPath();
       pCtx.arc(x, y, state.eraserSize / 2, 0, Math.PI * 2);
       pCtx.fill();
@@ -1796,23 +1160,21 @@
   }, { passive: false });
 
   function floodFillCanvas(sx, sy, hex, tol) {
-    var w = state.canvasW;
-    var h = state.canvasH;
-    var img = pCtx.getImageData(0, 0, w, h);
+    var img = pCtx.getImageData(0, 0, 480, 300);
     var d = img.data;
-    var sp = (sy * w + sx) * 4;
+    var sp = (sy * 480 + sx) * 4;
     var sr = d[sp], sg = d[sp + 1], sb = d[sp + 2], sa = d[sp + 3];
     var fr = parseInt(hex.slice(1, 3), 16);
     var fg = parseInt(hex.slice(3, 5), 16);
     var fb = parseInt(hex.slice(5, 7), 16);
     if (sr === fr && sg === fg && sb === fb && sa === 255) return;
 
-    var seen = new Uint8Array(w * h);
+    var seen = new Uint8Array(480 * 300);
     var stack = [[sx, sy]];
     while (stack.length > 0) {
       var cur = stack.pop();
       var x = cur[0], y = cur[1];
-      var idx = y * w + x;
+      var idx = y * 480 + x;
       if (seen[idx]) continue;
       seen[idx] = 1;
       var pos = idx * 4;
@@ -1823,36 +1185,37 @@
         d[pos + 2] = fb;
         d[pos + 3] = 255;
         if (x > 0) stack.push([x - 1, y]);
-        if (x < w - 1) stack.push([x + 1, y]);
+        if (x < 479) stack.push([x + 1, y]);
         if (y > 0) stack.push([x, y - 1]);
-        if (y < h - 1) stack.push([x, y + 1]);
+        if (y < 299) stack.push([x, y + 1]);
       }
     }
     pCtx.putImageData(img, 0, 0);
   }
 
   /* ----------------------------
-     枚数管理・プレビュー・透過・背景連結＆登録・完了ボタン
+     枚数管理（最大10枚）・プレビュー・保存
   ---------------------------- */
   function refreshFrameLabel() {
-    var maxF = getMaxFramesForMode();
-    document.getElementById("frame-info").textContent = (state.frameIdx + 1) + "枚目 (全" + state.frames.length + "枚 / 最大" + maxF + "枚)";
-    document.getElementById("btn-next-page").disabled = (state.frameIdx >= maxF - 1);
+    document.getElementById("frame-info").textContent = (state.frameIdx + 1) + "枚目 (全" + state.frames.length + "枚 / 最大10枚)";
+    document.getElementById("btn-next-page").disabled = (state.frameIdx >= 9);
   }
 
   window.goNextFrame = function() {
-    var maxF = getMaxFramesForMode();
-    if (state.frameIdx >= maxF - 1) return;
-    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    if (state.frameIdx >= 9) return;
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, 480, 300);
     state.frameIdx++;
     if (state.frames[state.frameIdx]) {
       pCtx.putImageData(state.frames[state.frameIdx], 0, 0);
     } else {
-      pCtx.fillStyle = "#ffffff";
-      pCtx.fillRect(0, 0, state.canvasW, state.canvasH);
-      state.frames.push(pCtx.getImageData(0, 0, state.canvasW, state.canvasH));
+      pCtx.clearRect(0, 0, 480, 300);
+      if (state.gameMode === "bg") {
+        pCtx.fillStyle = "#ffffff";
+        pCtx.fillRect(0, 0, 480, 300);
+      }
+      state.frames.push(pCtx.getImageData(0, 0, 480, 300));
     }
-    state.undoList = [pCtx.getImageData(0, 0, state.canvasW, state.canvasH)];
+    state.undoList = [pCtx.getImageData(0, 0, 480, 300)];
     state.redoList = [];
     refreshFrameLabel();
   };
@@ -1865,106 +1228,20 @@
     document.getElementById("modal-saved-dialog").classList.add("open");
   };
 
-  window.onDrawDoneClicked = function() {
-    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
-    if (state.gameMode === "bg" && state.frames.length < 1) {
-      alert("背景は1枚以上描いてから完了を押してください。");
-      return;
-    }
-    openAnimPreview();
-  };
-
   var timerId = null;
   var playIdx = 0;
   var playMs = 200;
-  var scrollOffset = 0;
-
-  var croppingActive = false;
-  var cropRatio = 0.65;
-  var cropPinchDist = 0;
-  var cropPinchRatio = 0.65;
-
-  function syncPreviewCanvasSize() {
-    var pv = document.getElementById("preview-stage");
-    var isBgStrip = (state.gameMode === "bg" && state.bgCondition === "sequence");
-    var pw = isBgStrip ? (state.canvasW * state.frames.length) : state.canvasW;
-    var ph = state.canvasH;
-    pv.width = pw;
-    pv.height = ph;
-    document.getElementById("preview-crop-area").style.aspectRatio = pw + " / " + ph;
-  }
 
   window.openAnimPreview = function() {
-    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
-    cancelCropSize();
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, 480, 300);
     playIdx = 0;
-    scrollOffset = 0;
-
-    var isBg = (state.gameMode === "bg");
-    if (isBg) {
-      state.bgCondition = "sequence";
-    }
-    syncPreviewCanvasSize();
-
-    document.getElementById("preview-modal-title").textContent = isBg
-      ? "背景プレビュー（最大" + state.frames.length + "枚横長1枚絵）"
-      : "アニメーションプレビュー（透過確認）";
-    document.getElementById("bg-anim-options").style.display = isBg ? "block" : "none";
-    document.getElementById("btn-pv-crop").style.display = isBg ? "none" : "inline-block";
-    document.getElementById("btn-pv-stamp").style.display = isBg ? "none" : "inline-block";
-    document.getElementById("btn-pv-bg-reg").style.display = isBg ? "inline-block" : "none";
-    document.getElementById("btn-pv-gif").style.display = isBg ? "inline-block" : "none";
-
-    if (isBg) {
-      window.setBgCondition("sequence");
-      window.setBgDirection(state.bgDirection);
-    }
-
     document.getElementById("modal-preview").classList.add("open");
     runPreviewLoop();
   };
 
-  window.setBgCondition = function(cond) {
-    state.bgCondition = cond;
-    document.getElementById("bg-cond-seq").classList.toggle("active", cond === "sequence");
-    document.getElementById("bg-cond-h").classList.toggle("active", cond === "horizontal");
-    document.getElementById("bg-cond-v").classList.toggle("active", cond === "vertical");
-    document.getElementById("bg-dir-row").style.display = (cond === "sequence") ? "none" : "flex";
-    scrollOffset = 0;
-    syncPreviewCanvasSize();
-    runPreviewLoop();
-  };
-
-  window.setBgDirection = function(dir) {
-    state.bgDirection = dir;
-    document.getElementById("bg-dir-1").classList.toggle("active", dir === "pos");
-    document.getElementById("bg-dir-2").classList.toggle("active", dir === "neg");
-  };
-
   window.closeAnimPreview = function() {
-    cancelCropSize();
     if (timerId) clearInterval(timerId);
     document.getElementById("modal-preview").classList.remove("open");
-  };
-
-  /* プレビュー画面の「完了」ボタン押下時：スタンプ未保存なら警告ポップアップを表示 */
-  window.onPreviewCompleteClicked = function() {
-    if (state.gameMode === "anim" && !stampRegisteredInCurrentSession) {
-      document.getElementById("modal-unsaved-warn").classList.add("open");
-      return;
-    }
-    window.forceCompletePreviewSession();
-  };
-
-  window.closeUnsavedWarnAndRegister = function() {
-    document.getElementById("modal-unsaved-warn").classList.remove("open");
-  };
-
-  window.forceCompletePreviewSession = function() {
-    document.getElementById("modal-unsaved-warn").classList.remove("open");
-    window.closeAnimPreview();
-    updateMenu2Status();
-    window.showScreen("screen-menu2");
   };
 
   window.changeSpeed = function(v) {
@@ -1973,372 +1250,38 @@
     runPreviewLoop();
   };
 
-  function buildTransparentFrameCanvases(framesArr, w, h, transHex) {
-    return framesArr.map(function(fd) {
-      return createTransparentFrameCanvas(fd, transHex);
-    });
-  }
-
-  function renderConnectedScroll(ctx, frameCanvases, w, h, cond, dir, offsetPx) {
-    var n = frameCanvases.length;
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    if (n === 0) return;
-    if (n === 1) {
-      ctx.drawImage(frameCanvases[0], 0, 0);
-      return;
-    }
-    if (cond === "horizontal") {
-      var totalW = w * n;
-      var mod = ((offsetPx % totalW) + totalW) % totalW;
-      var shift = (dir === "pos") ? mod : (totalW - mod);
-      for (var k = -1; k <= n; k++) {
-        var idx = ((k % n) + n) % n;
-        var dx = k * w + shift - totalW;
-        if (dx + w >= -w && dx <= w * 2) {
-          ctx.drawImage(frameCanvases[idx], dx, 0);
-        }
-      }
-    } else if (cond === "vertical") {
-      var totalH = h * n;
-      var modV = ((offsetPx % totalH) + totalH) % totalH;
-      var shiftV = (dir === "pos") ? modV : (totalH - modV);
-      for (var m = -1; m <= n; m++) {
-        var idxV = ((m % n) + n) % n;
-        var dy = m * h + shiftV - totalH;
-        if (dy + h >= -h && dy <= h * 2) {
-          ctx.drawImage(frameCanvases[idxV], 0, dy);
-        }
-      }
-    }
-  }
-
   function runPreviewLoop() {
     if (timerId) clearInterval(timerId);
     var pv = document.getElementById("preview-stage");
     var pc = pv.getContext("2d");
-    var fCanvases = buildTransparentFrameCanvases(state.frames, state.canvasW, state.canvasH, state.transparentColor);
-    var stripCanvas = buildHorizontalStripCanvas(state.frames, state.canvasW, state.canvasH, state.transparentColor);
-    var intervalMs = (state.gameMode === "bg" && state.bgCondition !== "sequence") ? 40 : playMs;
-
     function step() {
-      if (state.gameMode === "bg" && state.bgCondition === "sequence") {
-        pc.clearRect(0, 0, pv.width, pv.height);
-        pc.drawImage(stripCanvas, 0, 0);
-      } else if (state.gameMode === "bg" && state.bgCondition !== "sequence") {
-        var stepSpeed = Math.max(2, Math.round((1200 - playMs) / 90));
-        scrollOffset += stepSpeed;
-        renderConnectedScroll(pc, fCanvases, state.canvasW, state.canvasH, state.bgCondition, state.bgDirection, scrollOffset);
-      } else {
-        pc.clearRect(0, 0, pv.width, pv.height);
-        if (fCanvases[playIdx]) {
-          pc.drawImage(fCanvases[playIdx], 0, 0);
-        }
-        playIdx = (playIdx + 1) % fCanvases.length;
-      }
+      pc.clearRect(0, 0, 480, 300);
+      pc.putImageData(state.frames[playIdx], 0, 0);
+      playIdx = (playIdx + 1) % state.frames.length;
     }
     step();
-    timerId = setInterval(step, intervalMs);
+    timerId = setInterval(step, playMs);
   }
 
-  window.startCropSizeMode = function() {
-    croppingActive = true;
-    cropRatio = 0.65;
-    updateCropRectVisual();
-    document.getElementById("crop-confirm-bar").classList.add("active");
-  };
-
-  function updateCropRectVisual() {
-    var rectEl = document.getElementById("crop-dashed-rect");
-    rectEl.classList.add("active");
-    var wPct = cropRatio * 100;
-    var hPct = cropRatio * 100;
-    rectEl.style.width = wPct + "%";
-    rectEl.style.height = hPct + "%";
-    rectEl.style.left = ((100 - wPct) / 2) + "%";
-    rectEl.style.top = ((100 - hPct) / 2) + "%";
-  }
-
-  window.cancelCropSize = function() {
-    croppingActive = false;
-    document.getElementById("crop-dashed-rect").classList.remove("active");
-    document.getElementById("crop-confirm-bar").classList.remove("active");
-  };
-
-  var cropAreaEl = document.getElementById("preview-crop-area");
-  cropAreaEl.addEventListener("touchstart", function(e) {
-    if (!croppingActive) return;
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      var dx = e.touches[0].clientX - e.touches[1].clientX;
-      var dy = e.touches[0].clientY - e.touches[1].clientY;
-      cropPinchDist = Math.sqrt(dx * dx + dy * dy);
-      cropPinchRatio = cropRatio;
-    }
-  }, { passive: false });
-
-  cropAreaEl.addEventListener("touchmove", function(e) {
-    if (!croppingActive) return;
-    if (e.touches.length === 2 && cropPinchDist > 0) {
-      e.preventDefault();
-      var dx = e.touches[0].clientX - e.touches[1].clientX;
-      var dy = e.touches[0].clientY - e.touches[1].clientY;
-      var d = Math.sqrt(dx * dx + dy * dy);
-      cropRatio = Math.min(Math.max(0.25, cropPinchRatio * (d / cropPinchDist)), 1.0);
-      updateCropRectVisual();
-    }
-  }, { passive: false });
-
-  cropAreaEl.addEventListener("touchend", function(e) {
-    if (e.touches.length < 2) cropPinchDist = 0;
-  });
-
-  cropAreaEl.addEventListener("wheel", function(e) {
-    if (!croppingActive) return;
-    e.preventDefault();
-    cropRatio = Math.min(Math.max(0.25, cropRatio - e.deltaY * 0.001), 1.0);
-    updateCropRectVisual();
-  }, { passive: false });
-
-  window.applyCropSize = function() {
-    if (!croppingActive) return;
-    var oldW = state.canvasW;
-    var oldH = state.canvasH;
-    var newW = Math.max(24, Math.round(oldW * cropRatio));
-    var newH = Math.max(24, Math.round(oldH * cropRatio));
-    var sx = Math.floor((oldW - newW) / 2);
-    var sy = Math.floor((oldH - newH) / 2);
-
-    var srcCanvas = document.createElement("canvas");
-    srcCanvas.width = oldW;
-    srcCanvas.height = oldH;
-    var srcCtx = srcCanvas.getContext("2d");
-
-    var dstCanvas = document.createElement("canvas");
-    dstCanvas.width = newW;
-    dstCanvas.height = newH;
-    var dstCtx = dstCanvas.getContext("2d");
-
-    var croppedFrames = [];
-    for (var i = 0; i < state.frames.length; i++) {
-      srcCtx.clearRect(0, 0, oldW, oldH);
-      srcCtx.putImageData(state.frames[i], 0, 0);
-      dstCtx.fillStyle = "#ffffff";
-      dstCtx.fillRect(0, 0, newW, newH);
-      dstCtx.drawImage(srcCanvas, sx, sy, newW, newH, 0, 0, newW, newH);
-      croppedFrames.push(dstCtx.getImageData(0, 0, newW, newH));
-    }
-
-    state.frames = croppedFrames;
-    setCanvasDimensions(newW, newH);
-    syncPreviewCanvasSize();
-
-    var curFrame = state.frames[Math.min(state.frameIdx, state.frames.length - 1)] || state.frames[0];
-    state.frameIdx = Math.min(state.frameIdx, state.frames.length - 1);
-    pCtx.putImageData(curFrame, 0, 0);
-    state.undoList = [curFrame];
-    state.redoList = [];
-
-    cancelCropSize();
-    fitDrawCanvas();
-    runPreviewLoop();
-    alert("サイズを " + newW + "×" + newH + "px に変更しました！");
-  };
-
-  window.registerStamp = function() {
-    if (registeredStamps.length >= MAX_STAMPS) {
-      alert("スタンプ登録は最大" + MAX_STAMPS + "個までです。");
-      return;
-    }
-    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
-    var cloned = cloneImageDataList(state.frames);
-    var stampObj = {
-      id: "stamp_" + (registeredStamps.length + 1) + "_" + Date.now(),
-      name: "スタンプ" + (registeredStamps.length + 1) + " (P" + state.myPlayerId + ")",
-      ownerPlayerId: state.myPlayerId,
-      width: state.canvasW,
-      height: state.canvasH,
-      speed: playMs,
-      transparentColor: state.transparentColor,
-      frames: cloned
-    };
-    registeredStamps.push(stampObj);
-    stampRegisteredInCurrentSession = true;
-    updateMenu2Status();
-
-    safeSendPeer({
-      type: "stamp_share",
-      stamp: {
-        id: stampObj.id,
-        name: stampObj.name,
-        ownerPlayerId: stampObj.ownerPlayerId,
-        width: stampObj.width,
-        height: stampObj.height,
-        speed: stampObj.speed,
-        transparentColor: stampObj.transparentColor,
-        frames: cloned.map(function(fd) {
-          return { width: fd.width, height: fd.height, data: Array.from(fd.data) };
-        })
-      }
-    });
-
-    alert("「" + stampObj.name + "」を共有スタンプに登録しました！（" + registeredStamps.length + "/" + MAX_STAMPS + "個）");
-  };
-
-  /* 背景素材を最大3個まで登録（最大3枚連結の横長1枚絵として保持） */
-  window.registerBackgroundAsset = function() {
-    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
-    var stripCanvas = buildHorizontalStripCanvas(state.frames, state.canvasW, state.canvasH, null);
-    var assetNum = bgAssets.length < MAX_BG_ASSETS ? (bgAssets.length + 1) : MAX_BG_ASSETS;
-    var bgObj = {
-      id: "bg_" + Date.now(),
-      label: "背景" + assetNum + " (" + state.frames.length + "枚横長)",
-      unitWidth: state.canvasW,
-      unitHeight: state.canvasH,
-      frameCount: state.frames.length,
-      speed: playMs,
-      direction: state.bgDirection,
-      frames: cloneImageDataList(state.frames),
-      stripCanvas: stripCanvas,
-      stripDataUrl: stripCanvas.toDataURL("image/png")
-    };
-
-    if (bgAssets.length < MAX_BG_ASSETS) {
-      bgAssets.push(bgObj);
-    } else {
-      bgAssets[MAX_BG_ASSETS - 1] = bgObj;
-    }
-    updateMenu2Status();
-    alert("「" + bgObj.label + "」を背景素材に登録しました！（" + bgAssets.length + "/" + MAX_BG_ASSETS + "個）");
-  };
-
-  function encodeSimpleAnimatedGif(frameCanvases, delayMs) {
-    var w = frameCanvases[0].width;
-    var h = frameCanvases[0].height;
-    var delayCs = Math.max(2, Math.round(delayMs / 10));
-    var out = [];
-
-    function pushStr(s) {
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i) & 0xff);
-    }
-    function push16(n) {
-      out.push(n & 0xff, (n >> 8) & 0xff);
-    }
-
-    pushStr("GIF89a");
-    push16(w);
-    push16(h);
-    out.push(0x80, 0x00, 0x00);
-    out.push(0x00, 0x00, 0x00);
-    out.push(0xff, 0xff, 0xff);
-    out.push(0x21, 0xff, 0x0b);
-    pushStr("NETSCAPE2.0");
-    out.push(0x03, 0x01);
-    push16(0);
-    out.push(0x00);
-
-    for (var f = 0; f < frameCanvases.length; f++) {
-      var img = frameCanvases[f].getContext("2d").getImageData(0, 0, w, h).data;
-      var indices = new Uint8Array(w * h);
-      for (var p = 0, idx = 0; p < img.length; p += 4, idx++) {
-        var lum = (img[p] + img[p + 1] + img[p + 2]) / 3;
-        indices[idx] = lum >= 128 ? 1 : 0;
-      }
-
-      out.push(0x21, 0xf9, 0x04, 0x04);
-      push16(delayCs);
-      out.push(0x00, 0x00);
-
-      out.push(0x2c);
-      push16(0); push16(0); push16(w); push16(h);
-      out.push(0x00);
-
-      var minCode = 2;
-      var clearCode = 1 << minCode;
-      var endCode = clearCode + 1;
-      var codeSize = minCode + 1;
-      out.push(minCode);
-
-      var bitBuf = 0;
-      var bitLen = 0;
-      var subBlock = [];
-
-      function flushSubBlocks() {
-        for (var i = 0; i < subBlock.length; i += 255) {
-          var chunk = subBlock.slice(i, i + 255);
-          out.push(chunk.length);
-          for (var j = 0; j < chunk.length; j++) out.push(chunk[j]);
-        }
-        subBlock = [];
-        out.push(0x00);
-      }
-
-      function writeCode(code, size) {
-        bitBuf |= (code << bitLen);
-        bitLen += size;
-        while (bitLen >= 8) {
-          subBlock.push(bitBuf & 0xff);
-          bitBuf >>= 8;
-          bitLen -= 8;
-        }
-      }
-
-      writeCode(clearCode, codeSize);
-      for (var i = 0; i < indices.length; i++) {
-        writeCode(indices[i] & 1, codeSize);
-        if (i > 0 && i % 240 === 0) {
-          writeCode(clearCode, codeSize);
-        }
-      }
-      writeCode(endCode, codeSize);
-      if (bitLen > 0) subBlock.push(bitBuf & 0xff);
-      flushSubBlocks();
-    }
-
-    out.push(0x3b);
-    return new Blob([new Uint8Array(out)], { type: "image/gif" });
-  }
-
-  window.saveBackgroundGIF = function() {
-    var fCanvases = buildTransparentFrameCanvases(state.frames, state.canvasW, state.canvasH, state.transparentColor);
-    var blob = encodeSimpleAnimatedGif(fCanvases, playMs);
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.download = "wing_bg_" + state.frames.length + "frames.gif";
-    a.href = url;
-    a.click();
-    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
-    document.getElementById("modal-saved-dialog").classList.add("open");
-  };
-
-  window.savePreviewAsset = function() {
-    var w = state.canvasW;
-    var h = state.canvasH;
-    var n = state.frames.length;
-
-    if (state.gameMode === "bg") {
-      var stripCanvas = buildHorizontalStripCanvas(state.frames, w, h, null);
-      var aBg = document.createElement("a");
-      aBg.download = "wing_bg_strip_" + stripCanvas.width + "x" + stripCanvas.height + ".png";
-      aBg.href = stripCanvas.toDataURL("image/png");
-      aBg.click();
-
-      window.closeAnimPreview();
-      document.getElementById("modal-saved-dialog").classList.add("open");
-      return;
-    }
-
+  // 各フレームを連結したシート画像または各枚PNGで保存（外部ライブラリ依存なしで確実にダウンロード）
+  window.saveAnimationFile = function() {
     var sheet = document.createElement("canvas");
-    sheet.width = w * n;
-    sheet.height = h;
+    sheet.width = 480 * state.frames.length;
+    sheet.height = 300;
     var sctx = sheet.getContext("2d");
-    var tCanvases = buildTransparentFrameCanvases(state.frames, w, h, state.transparentColor);
+    var tmp = document.createElement("canvas");
+    tmp.width = 480;
+    tmp.height = 300;
+    var tctx = tmp.getContext("2d");
 
-    for (var k = 0; k < n; k++) {
-      sctx.drawImage(tCanvases[k], k * w, 0);
+    for (var i = 0; i < state.frames.length; i++) {
+      tctx.clearRect(0, 0, 480, 300);
+      tctx.putImageData(state.frames[i], 0, 0);
+      sctx.drawImage(tmp, i * 480, 0);
     }
 
     var a = document.createElement("a");
-    a.download = "wing_anim_" + w + "x" + h + "_" + n + "frames.png";
+    a.download = "wing_anim_sheet_" + state.frames.length + "frames.png";
     a.href = sheet.toDataURL("image/png");
     a.click();
 
@@ -2346,539 +1289,11 @@
     document.getElementById("modal-saved-dialog").classList.add("open");
   };
 
-  window.afterSaveChoice = function(goTitle) {
+  window.afterSaveChoice = function(goMenu) {
     document.getElementById("modal-saved-dialog").classList.remove("open");
-    if (goTitle) {
-      window.showScreen("screen-title");
+    if (goMenu) {
+      window.showScreen("screen-menu2");
     }
-  };
-
-  /* ----------------------------
-     （３）PV（合体）モード：①ポケカラ用（上段・中段・下段＋「なし」選択可）
-  ---------------------------- */
-  var pokeSlotsData = [null, null, null]; // null は「なし」を表す
-  var pokeScrollOn = true;
-  var pokeAxis = "h";
-  var pokeDir = "left";
-  var pokeOffset = 0;
-  var pokeTimer = null;
-
-  var tierNamesJp = ["上段", "中段", "下段"];
-
-  window.openPvModeSelect = function() {
-    window.showScreen("screen-pv-select");
-  };
-
-  window.openPokeSetup = function() {
-    var box = document.getElementById("poke-slot-selectors");
-    var html = "";
-    for (var s = 0; s < 3; s++) {
-      html += "<div style='margin-bottom:8px;'><b>" + tierNamesJp[s] + ":</b> ";
-      html += "<select id='poke-sel-" + s + "' class='count-select' style='width:190px;'>";
-      html += "<option value='-1'" + (s === 2 && bgAssets.length < 3 ? " selected" : "") + ">なし</option>";
-      for (var c = 0; c < bgAssets.length; c++) {
-        var defaultSel = (c === s) ? " selected" : "";
-        html += "<option value='" + c + "'" + defaultSel + ">" + bgAssets[c].label + "</option>";
-      }
-      html += "</select></div>";
-    }
-    box.innerHTML = html;
-    window.showScreen("screen-poke-setup");
-  };
-
-  window.buildPokeVerticalPreview = function() {
-    for (var s = 0; s < 3; s++) {
-      var val = parseInt(document.getElementById("poke-sel-" + s).value, 10);
-      if (isNaN(val) || val < 0 || !bgAssets[val]) {
-        pokeSlotsData[s] = null; // なし
-      } else {
-        pokeSlotsData[s] = bgAssets[val];
-      }
-    }
-    pokeScrollOn = true;
-    pokeOffset = 0;
-    window.setPokeAxis(pokeAxis);
-    window.showScreen("screen-poke-preview");
-    startPokePreviewLoop();
-  };
-
-  window.togglePokeScroll = function() {
-    pokeScrollOn = !pokeScrollOn;
-    var btn = document.getElementById("poke-scroll-toggle");
-    btn.textContent = "スクロール: " + (pokeScrollOn ? "ON" : "OFF");
-    btn.classList.toggle("active", pokeScrollOn);
-  };
-
-  window.setPokeAxis = function(ax) {
-    pokeAxis = ax;
-    document.getElementById("poke-axis-v").classList.toggle("active", ax === "v");
-    document.getElementById("poke-axis-h").classList.toggle("active", ax === "h");
-    document.getElementById("poke-dir-v-row").style.display = (ax === "v") ? "flex" : "none";
-    document.getElementById("poke-dir-h-row").style.display = (ax === "h") ? "flex" : "none";
-    window.setPokeDir(ax === "v" ? "up" : "left");
-  };
-
-  window.setPokeDir = function(d) {
-    pokeDir = d;
-    document.getElementById("poke-v-up").classList.toggle("active", d === "up");
-    document.getElementById("poke-v-down").classList.toggle("active", d === "down");
-    document.getElementById("poke-h-right").classList.toggle("active", d === "right");
-    document.getElementById("poke-h-left").classList.toggle("active", d === "left");
-  };
-
-  function drawPokeSlotBand(ctx, bg, bandX, bandY, bandW, bandH, offsetVal) {
-    if (!bg) return; // 「なし」の場合は描画しない
-    var strip = bg.stripCanvas || buildHorizontalStripCanvas(bg.frames, bg.unitWidth, bg.unitHeight, null);
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(bandX, bandY, bandW, bandH);
-    ctx.clip();
-
-    if (pokeAxis === "h") {
-      var modX = ((offsetVal % bandW) + bandW) % bandW;
-      var shiftX = (pokeDir === "right") ? modX : -modX;
-      for (var k = -1; k <= 1; k++) {
-        ctx.drawImage(strip, bandX + k * bandW + shiftX, bandY, bandW, bandH);
-      }
-    } else {
-      var modY = ((offsetVal % bandH) + bandH) % bandH;
-      var shiftY = (pokeDir === "down") ? modY : -modY;
-      for (var m = -1; m <= 1; m++) {
-        ctx.drawImage(strip, bandX, bandY + m * bandH + shiftY, bandW, bandH);
-      }
-    }
-
-    ctx.restore();
-  }
-
-  function startPokePreviewLoop() {
-    if (pokeTimer) clearInterval(pokeTimer);
-    var pCanvasEl = document.getElementById("poke-preview-canvas");
-    var pCtxEl = pCanvasEl.getContext("2d");
-    var tierH = pCanvasEl.height / 3;
-
-    function tick() {
-      pCtxEl.fillStyle = "#ffffff";
-      pCtxEl.fillRect(0, 0, pCanvasEl.width, pCanvasEl.height);
-      if (pokeScrollOn) {
-        pokeOffset += 3;
-      }
-      for (var s = 0; s < 3; s++) {
-        drawPokeSlotBand(pCtxEl, pokeSlotsData[s], 0, s * tierH, pCanvasEl.width, tierH, pokeOffset);
-      }
-    }
-    tick();
-    pokeTimer = setInterval(tick, 40);
-  }
-
-  window.confirmPokePreviewAndStartTimer = function() {
-    if (pokeTimer) clearInterval(pokeTimer);
-    window.showScreen("screen-pv-timer-setup");
-  };
-
-  /* ----------------------------
-     制限時間（1〜5分）・上中下段／コマ選択・スタンプ配置（透過反映）・MP4録画
-  ---------------------------- */
-  var pvCanvas = document.getElementById("pv-canvas");
-  var pvCtx = pvCanvas.getContext("2d");
-  var selectedStampIdx = 0;
-  var pvTier = 0;
-  var pvSlot = 0;
-  var placedStamps = [];
-  var pvRenderTimer = null;
-  var pvCountdownTimer = null;
-  var pvRemainingSec = 60;
-  var draggingPlacedIdx = -1;
-  var dragOffsetX = 0;
-  var dragOffsetY = 0;
-
-  window.setPvTier = function(t) {
-    pvTier = t;
-    [0, 1, 2].forEach(function(i) {
-      document.getElementById("pv-tier-" + (i + 1)).classList.toggle("active", i === t);
-    });
-    updatePvTargetBadge();
-  };
-
-  window.setPvSlot = function(s) {
-    pvSlot = s;
-    [0, 1, 2].forEach(function(i) {
-      document.getElementById("pv-slot-" + (i + 1)).classList.toggle("active", i === s);
-    });
-    updatePvTargetBadge();
-  };
-
-  function updatePvTargetBadge() {
-    document.getElementById("pv-target-badge").textContent = "対象: " + tierNamesJp[pvTier] + " / " + (pvSlot + 1) + "枚目";
-  }
-
-  window.startPvEditingSession = function(customMinutes, fromPeer) {
-    var mins = customMinutes || parseInt(document.getElementById("select-pv-minutes").value, 10) || 1;
-    mins = Math.min(5, Math.max(1, mins));
-    if (!fromPeer) {
-      safeSendPeer({ type: "round_start", minutes: mins });
-    }
-    pvRemainingSec = mins * 60;
-    renderStampList();
-    updatePvTargetBadge();
-    updatePvTimerLabel();
-    window.showScreen("screen-pv");
-
-    if (pvCountdownTimer) clearInterval(pvCountdownTimer);
-    pvCountdownTimer = setInterval(function() {
-      pvRemainingSec--;
-      updatePvTimerLabel();
-      if (pvRemainingSec <= 0) {
-        clearInterval(pvCountdownTimer);
-        finishPvEditingRound();
-      }
-    }, 1000);
-
-    startPvEditCanvasLoop();
-  };
-
-  function updatePvTimerLabel() {
-    var m = Math.floor(pvRemainingSec / 60);
-    var s = pvRemainingSec % 60;
-    document.getElementById("pv-timer-badge").textContent =
-      "残り " + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
-  }
-
-  function renderStampList() {
-    var listEl = document.getElementById("stamp-list");
-    listEl.innerHTML = "";
-    if (registeredStamps.length === 0) {
-      listEl.innerHTML = "<div style='font-size:10px; color:#666; padding:4px;'>共有スタンプがありません。アニメ素材から登録してください。</div>";
-      return;
-    }
-    for (var i = 0; i < registeredStamps.length; i++) {
-      (function(idx, st) {
-        var row = document.createElement("div");
-        row.className = "stamp-item" + (idx === selectedStampIdx ? " selected-stamp" : "");
-        row.textContent = st.name + " (" + st.frames.length + "枚)";
-        row.onclick = function() {
-          selectedStampIdx = idx;
-          renderStampList();
-        };
-        listEl.appendChild(row);
-      })(i, registeredStamps[i]);
-    }
-  }
-
-  window.placeSelectedStamp = function() {
-    if (registeredStamps.length === 0) {
-      alert("先にアニメーション素材からスタンプ登録を行ってください。");
-      return;
-    }
-    var st = registeredStamps[selectedStampIdx] || registeredStamps[0];
-    var tierBandY = pvTier * 100;
-    placedStamps.push({
-      stamp: st,
-      tier: pvTier,
-      slot: pvSlot,
-      x: 30 + (placedStamps.length * 24) % 260,
-      y: tierBandY + 12
-    });
-  };
-
-  function renderStampFrameToCanvas(st, fIdx) {
-    return createTransparentFrameCanvas(st.frames[fIdx], st.transparentColor);
-  }
-
-  function renderPvCompositeFrame(targetCtx, w, h, tickMs) {
-    targetCtx.fillStyle = "#ffffff";
-    targetCtx.fillRect(0, 0, w, h);
-
-    var tierH = h / 3;
-    for (var s = 0; s < 3; s++) {
-      var bg = pokeSlotsData[s];
-      if (!bg) continue; // 「なし」の段はスキップ
-      var strip = bg.stripCanvas || buildHorizontalStripCanvas(bg.frames, bg.unitWidth, bg.unitHeight, null);
-      var scrollPx = Math.floor((tickMs / 40) * 3) % w;
-      var shiftX = (pokeDir === "right") ? scrollPx : -scrollPx;
-      targetCtx.save();
-      targetCtx.beginPath();
-      targetCtx.rect(0, s * tierH, w, tierH);
-      targetCtx.clip();
-      for (var k = -1; k <= 1; k++) {
-        targetCtx.drawImage(strip, k * w + shiftX, s * tierH, w, tierH);
-      }
-      targetCtx.restore();
-    }
-
-    for (var i = 0; i < placedStamps.length; i++) {
-      var ps = placedStamps[i];
-      var st = ps.stamp;
-      var stepFrames = Math.max(1, Math.round(st.speed / 50));
-      var fIdx = Math.floor(tickMs / (stepFrames * 50)) % st.frames.length;
-      var sCan = renderStampFrameToCanvas(st, fIdx);
-      targetCtx.drawImage(sCan, ps.x, ps.y);
-    }
-  }
-
-  function startPvEditCanvasLoop() {
-    if (pvRenderTimer) clearInterval(pvRenderTimer);
-    var tick = 0;
-    pvRenderTimer = setInterval(function() {
-      tick += 50;
-      renderPvCompositeFrame(pvCtx, pvCanvas.width, pvCanvas.height, tick);
-
-      pvCtx.strokeStyle = "rgba(0, 0, 0, 0.25)";
-      pvCtx.setLineDash([4, 4]);
-      pvCtx.beginPath();
-      pvCtx.moveTo(0, 100); pvCtx.lineTo(pvCanvas.width, 100);
-      pvCtx.moveTo(0, 200); pvCtx.lineTo(pvCanvas.width, 200);
-      pvCtx.stroke();
-      pvCtx.setLineDash([]);
-    }, 50);
-  }
-
-  function getPvXY(cx, cy) {
-    var r = pvCanvas.getBoundingClientRect();
-    return {
-      x: (cx - r.left) * (pvCanvas.width / r.width),
-      y: (cy - r.top) * (pvCanvas.height / r.height)
-    };
-  }
-
-  function onPvDown(cx, cy) {
-    var pt = getPvXY(cx, cy);
-    for (var i = placedStamps.length - 1; i >= 0; i--) {
-      var ps = placedStamps[i];
-      if (pt.x >= ps.x && pt.x <= ps.x + ps.stamp.width && pt.y >= ps.y && pt.y <= ps.y + ps.stamp.height) {
-        draggingPlacedIdx = i;
-        dragOffsetX = pt.x - ps.x;
-        dragOffsetY = pt.y - ps.y;
-        return;
-      }
-    }
-  }
-
-  function onPvMove(cx, cy) {
-    if (draggingPlacedIdx < 0) return;
-    var pt = getPvXY(cx, cy);
-    placedStamps[draggingPlacedIdx].x = pt.x - dragOffsetX;
-    placedStamps[draggingPlacedIdx].y = pt.y - dragOffsetY;
-  }
-
-  function onPvUp() {
-    draggingPlacedIdx = -1;
-  }
-
-  pvCanvas.addEventListener("mousedown", function(e) { onPvDown(e.clientX, e.clientY); });
-  window.addEventListener("mousemove", function(e) { onPvMove(e.clientX, e.clientY); });
-  window.addEventListener("mouseup", onPvUp);
-
-  pvCanvas.addEventListener("touchstart", function(e) {
-    if (e.touches.length === 1) {
-      e.preventDefault();
-      onPvDown(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  }, { passive: false });
-  pvCanvas.addEventListener("touchmove", function(e) {
-    if (draggingPlacedIdx >= 0 && e.touches.length === 1) {
-      e.preventDefault();
-      onPvMove(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  }, { passive: false });
-  pvCanvas.addEventListener("touchend", onPvUp);
-
-  /* ----------------------------
-     制限時間終了→合体プレビュー→追加／終了／MP4実録画
-  ---------------------------- */
-  var resultLoopTimer = null;
-  var recordedVideoBlob = null;
-  var recordedVideoExt = "mp4";
-
-  window.finishPvEditingRound = function(fromPeer) {
-    if (pvCountdownTimer) clearInterval(pvCountdownTimer);
-    if (pvRenderTimer) clearInterval(pvRenderTimer);
-    if (!fromPeer) {
-      safeSendPeer({ type: "round_finish" });
-    }
-    openPvRoundResultModal();
-  };
-
-  function openPvRoundResultModal() {
-    var rCan = document.getElementById("pv-result-canvas");
-    var rCtx = rCan.getContext("2d");
-    var tick = 0;
-
-    if (resultLoopTimer) clearInterval(resultLoopTimer);
-    resultLoopTimer = setInterval(function() {
-      tick += 60;
-      renderPvCompositeFrame(rCtx, rCan.width, rCan.height, tick);
-    }, 60);
-
-    document.getElementById("pv-final-save-box").style.display = "none";
-    document.getElementById("pv-guest-add-time-box").style.display = "none";
-
-    if (state.playMode === "multi" && state.role === "guest") {
-      document.getElementById("pv-guest-choice-box").style.display = "block";
-      document.getElementById("pv-host-decision-box").style.display = "none";
-    } else {
-      document.getElementById("pv-guest-choice-box").style.display = "none";
-      document.getElementById("pv-host-decision-box").style.display = "block";
-      refreshHostRequestsSummary();
-    }
-
-    document.getElementById("modal-pv-round-result").classList.add("open");
-  }
-
-  window.guestChooseAdd = function() {
-    document.getElementById("pv-guest-choice-box").style.display = "none";
-    document.getElementById("pv-guest-add-time-box").style.display = "block";
-  };
-
-  window.submitGuestAddRequest = function() {
-    var m = parseInt(document.getElementById("select-guest-add-min").value, 10) || 1;
-    var req = { playerId: state.myPlayerId, action: "add", minutes: m };
-    guestRequests.push(req);
-    safeSendPeer({ type: "guest_decision", playerId: req.playerId, action: req.action, minutes: req.minutes });
-    document.getElementById("pv-guest-add-time-box").style.display = "none";
-    document.getElementById("pv-host-decision-box").style.display = "block";
-    refreshHostRequestsSummary();
-  };
-
-  window.guestChooseEnd = function() {
-    var req = { playerId: state.myPlayerId, action: "end", minutes: 0 };
-    guestRequests.push(req);
-    safeSendPeer({ type: "guest_decision", playerId: req.playerId, action: req.action, minutes: 0 });
-    document.getElementById("pv-guest-choice-box").style.display = "none";
-    document.getElementById("pv-host-decision-box").style.display = "block";
-    refreshHostRequestsSummary();
-  };
-
-  function refreshHostRequestsSummary() {
-    var sumEl = document.getElementById("pv-host-requests-summary");
-    if (state.playMode === "single") {
-      sumEl.textContent = "一人モード: 編集を追加するか、MP4録画保存へ進んでください。";
-      return;
-    }
-    if (guestRequests.length === 0) {
-      sumEl.textContent = "参加者希望: 選択結果を確認し、ホストが「追加」または「保存」を押してください。";
-      return;
-    }
-    var lines = guestRequests.map(function(r) {
-      var pid = r.playerId || 2;
-      return "プレイヤー" + pid + ": " + (r.action === "add" ? ("追加 (" + r.minutes + "分希望)") : "終了希望");
-    });
-    sumEl.innerHTML = lines.join("<br>");
-  }
-
-  window.hostChooseAddMore = function() {
-    if (resultLoopTimer) clearInterval(resultLoopTimer);
-    document.getElementById("modal-pv-round-result").classList.remove("open");
-    var suggestedMin = 1;
-    for (var i = guestRequests.length - 1; i >= 0; i--) {
-      if (guestRequests[i].action === "add" && guestRequests[i].minutes) {
-        suggestedMin = guestRequests[i].minutes;
-        break;
-      }
-    }
-    document.getElementById("select-pv-minutes").value = String(suggestedMin);
-    window.showScreen("screen-pv-timer-setup");
-  };
-
-  function recordStandardVideoBlob(durationMs, callback) {
-    var recCanvas = document.createElement("canvas");
-    recCanvas.width = 480;
-    recCanvas.height = 300;
-    var recCtx = recCanvas.getContext("2d");
-
-    if (!recCanvas.captureStream || typeof MediaRecorder === "undefined") {
-      recCanvas.toBlob(function(pngBlob) {
-        callback(pngBlob, "png");
-      }, "image/png");
-      return;
-    }
-
-    var stream = recCanvas.captureStream(30);
-    var mimeType = "";
-    if (MediaRecorder.isTypeSupported("video/mp4")) {
-      mimeType = "video/mp4";
-      recordedVideoExt = "mp4";
-    } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
-      mimeType = "video/webm;codecs=vp8";
-      recordedVideoExt = "webm";
-    } else if (MediaRecorder.isTypeSupported("video/webm")) {
-      mimeType = "video/webm";
-      recordedVideoExt = "webm";
-    }
-
-    var chunks = [];
-    var recorder;
-    try {
-      recorder = mimeType ? new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1200000 }) : new MediaRecorder(stream);
-    } catch (e) {
-      recCanvas.toBlob(function(pngBlob) {
-        callback(pngBlob, "png");
-      }, "image/png");
-      return;
-    }
-
-    recorder.ondataavailable = function(ev) {
-      if (ev.data && ev.data.size > 0) chunks.push(ev.data);
-    };
-
-    var elapsed = 0;
-    var frameTimer = setInterval(function() {
-      elapsed += 50;
-      renderPvCompositeFrame(recCtx, recCanvas.width, recCanvas.height, elapsed);
-    }, 50);
-
-    recorder.onstop = function() {
-      clearInterval(frameTimer);
-      var outMime = mimeType || "video/webm";
-      callback(new Blob(chunks, { type: outMime }), recordedVideoExt);
-    };
-
-    recorder.start();
-    setTimeout(function() {
-      if (recorder.state !== "inactive") {
-        recorder.stop();
-      }
-    }, durationMs);
-  }
-
-  window.hostChooseSaveMp4 = function() {
-    var btn = document.getElementById("btn-record-mp4");
-    btn.disabled = true;
-    btn.textContent = "録画中...";
-    recordStandardVideoBlob(3000, function(blob, ext) {
-      btn.disabled = false;
-      btn.textContent = "保存（MP4録画）";
-      recordedVideoBlob = blob;
-      recordedVideoExt = ext;
-      safeSendPeer({ type: "save_ready" });
-
-      document.getElementById("pv-host-decision-box").style.display = "none";
-      document.getElementById("pv-final-save-box").style.display = "block";
-      document.getElementById("pv-mp4-status").textContent =
-        (ext === "mp4" ? "MP4" : ext.toUpperCase() + "（互換形式）") + " 動画を作成しました。保存先を選んで保存してください。";
-    });
-  };
-
-  window.chooseSaveLocationAndReturn = function() {
-    if (recordedVideoBlob) {
-      var url = URL.createObjectURL(recordedVideoBlob);
-      var a = document.createElement("a");
-      a.download = "wing_pv_combined." + recordedVideoExt;
-      a.href = url;
-      a.click();
-      setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
-    }
-    window.returnToTitleImmediately();
-  };
-
-  window.returnToTitleImmediately = function() {
-    if (resultLoopTimer) clearInterval(resultLoopTimer);
-    if (pvRenderTimer) clearInterval(pvRenderTimer);
-    if (pvCountdownTimer) clearInterval(pvCountdownTimer);
-    recordedVideoBlob = null;
-    document.getElementById("modal-pv-round-result").classList.remove("open");
-    window.showScreen("screen-title");
   };
 
   window.addEventListener("resize", function() {
