@@ -69,11 +69,12 @@
     display: flex;
   }
 
-  /* 右上：スマホ／PC切替バー */
+  /* 上部中央：スマホ／PC切替バー（お絵描き画面中はツール保護のため非表示） */
   .mode-switch-bar {
     position: fixed;
     top: 6px;
-    right: 8px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 500;
     background: rgba(255, 255, 255, 0.95);
     border: 2px solid #222222;
@@ -84,6 +85,10 @@
     gap: 4px;
     font-size: 11px;
     font-weight: bold;
+    white-space: nowrap;
+  }
+  body.drawing-mode .mode-switch-bar {
+    display: none;
   }
   .switch-btn {
     border: none;
@@ -652,7 +657,7 @@
 <div id="portrait-overlay">
   <div class="rotate-mark">↻</div>
   <div style="font-size:16px; font-weight:bold; margin-bottom:6px;">スマホは横画面専用です</div>
-  <div style="font-size:12px;">横向きにするか、右上の「PC」切替を押してください</div>
+  <div style="font-size:12px;">横向きにするか、上部の「PC」切替を押してください</div>
 </div>
 
 <!-- スマホ／PC切替スイッチ -->
@@ -666,7 +671,7 @@
 <div id="screen-title" class="screen active">
   <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
   <div class="blink-start" id="btn-title-start">スタート</div>
-  <div class="version-badge" id="app-version-badge">Ver 1.4</div>
+  <div class="version-badge" id="app-version-badge">Ver 1.4.2</div>
 </div>
 
 <!-- 2. メニュー1：人数選択 -->
@@ -867,7 +872,6 @@
   <div class="panel-card">
     <h2 class="panel-heading">（３）PV（合体）モード選択</h2>
     <button type="button" class="pop-btn orange" onclick="openPokeSetup()">① ポケカラ用（縦3枠）</button><br>
-    <button type="button" class="pop-btn gray" disabled onclick="alert('②横画面自由配置モードは現在保留中です')">② 横画面自由配置（保留中）</button><br>
     <button type="button" class="pop-btn gray" style="font-size:12px; padding:5px 14px;" onclick="showScreen('screen-menu2')">もどる</button>
   </div>
 </div>
@@ -1018,7 +1022,7 @@
 (function() {
   "use strict";
 
-  var APP_VERSION = "Ver 1.4";
+  var APP_VERSION = "Ver 1.4.2";
   document.getElementById("app-version-badge").textContent = APP_VERSION;
 
   /* ----------------------------
@@ -1077,12 +1081,12 @@
 
   var state = {
     device: "pc",
-    playMode: "single", // "single" | "multi"
-    role: "host",       // "host" | "guest"
-    playerCount: 3,     // 最大3人
+    playMode: "single",
+    role: "host",
+    playerCount: 3,
     myPlayerId: 1,
     roomPass: "",
-    gameMode: "anim",   // "anim" | "bg"
+    gameMode: "anim",
     transparentColor: null,
     tempTransparentColor: null,
     drawColor: "#000000",
@@ -1108,9 +1112,7 @@
         if (peerConns[i] && peerConns[i].open) {
           peerConns[i].send(payload);
         }
-      } catch (e) {
-        // 送信失敗時もクラッシュさせず継続
-      }
+      } catch (e) {}
     }
   }
 
@@ -1176,9 +1178,7 @@
       peerInstance.on("error", function() {
         document.getElementById("host-wait-label").textContent = "ローカル同期モード (" + peerConnectedCount + "/" + state.playerCount + "人)";
       });
-    } catch (e) {
-      // エラー時も続行
-    }
+    } catch (e) {}
   }
 
   function initPeerAsGuest(pass, onDone) {
@@ -1266,6 +1266,11 @@
      画面遷移
   ---------------------------- */
   window.showScreen = function(id) {
+    if (id === "screen-draw") {
+      document.body.classList.add("drawing-mode");
+    } else {
+      document.body.classList.remove("drawing-mode");
+    }
     var list = document.querySelectorAll(".screen");
     for (var i = 0; i < list.length; i++) {
       list[i].classList.remove("active");
@@ -2759,7 +2764,6 @@
     window.showScreen("screen-pv-timer-setup");
   };
 
-  /* 標準解像度（480×300・30fps）で3秒間の動画録画 */
   function recordStandardVideoBlob(durationMs, callback) {
     var recCanvas = document.createElement("canvas");
     recCanvas.width = 480;
