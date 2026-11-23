@@ -22,7 +22,7 @@
     font-size: 13px;
   }
 
-  /* スマホ縦画面警告（PV縦プレビュー中は免除） */
+  /* スマホ縦画面警告 */
   #portrait-overlay {
     display: none;
     position: fixed;
@@ -69,7 +69,7 @@
     display: flex;
   }
 
-  /* 上部中央：スマホ／PC切替バー（お絵描き画面中はツール保護のため非表示） */
+  /* 上部中央：スマホ／PC切替バー */
   .mode-switch-bar {
     position: fixed;
     top: 6px;
@@ -462,7 +462,7 @@
     pointer-events: none;
   }
 
-  /* プレビュー＆点線サイズ調整枠（市松模様で透過を可視化） */
+  /* プレビュー＆点線サイズ調整枠 */
   .preview-box-wrap {
     position: relative;
     display: inline-block;
@@ -728,7 +728,7 @@
 <div id="screen-title" class="screen active">
   <div class="pop-title">WING<span class="sub">お絵描き</span><br>PV作成</div>
   <div class="blink-start" id="btn-title-start">スタート</div>
-  <div class="version-badge" id="app-version-badge">Ver 1.4.5</div>
+  <div class="version-badge" id="app-version-badge">Ver 1.4.6</div>
 </div>
 
 <!-- 2. メニュー1：モード選択 -->
@@ -949,7 +949,7 @@
   </div>
 </div>
 
-<!-- 7-1. ①ポケカラ用（縦3枠）上段・中段・下段割り当て設定（「なし」選択可） -->
+<!-- 7-1. ①ポケカラ用（縦3枠）上段・中段・下段割り当て設定 -->
 <div id="screen-poke-setup" class="screen">
   <div class="panel-card">
     <h2 class="panel-heading">ポケカラ用（縦3枠）背景割り当て</h2>
@@ -1122,12 +1122,10 @@
 (function() {
   "use strict";
 
-  var APP_VERSION = "Ver 1.4.5";
+  var APP_VERSION = "Ver 1.4.6";
   document.getElementById("app-version-badge").textContent = APP_VERSION;
 
-  /* ----------------------------
-     カラーパレット（250色）生成
-  ---------------------------- */
+  /* カラーパレット（250色）生成 */
   var colors250 = [];
   for (var g = 0; g < 10; g++) {
     var v = Math.round((255 / 9) * g);
@@ -1175,9 +1173,7 @@
     };
   }
 
-  /* ----------------------------
-     セッション保持データ＆PeerJS区切り同期
-  ---------------------------- */
+  /* セッション保持データ＆PeerJS区切り同期 */
   var MAX_STAMPS = 10;
   var MAX_BG_ASSETS = 3;
   var registeredStamps = [];
@@ -1327,19 +1323,23 @@
     });
   }
 
-  /* 透過色を適用したキャンバスを生成（描画中は白のまま保持し、出力・合成・プレビューで透過適用） */
+  /* 透過色を適用したキャンバスを生成（確実な背景アルファ化・アンチエイリアス境界透過処理） */
   function createTransparentFrameCanvas(imgData, transHex) {
     var c = document.createElement("canvas");
     c.width = imgData.width;
     c.height = imgData.height;
     var ctx = c.getContext("2d");
     var copy = new ImageData(new Uint8ClampedArray(imgData.data), imgData.width, imgData.height);
-    var rgb = hexToRgb(transHex);
+    
+    // 指定がない場合は背景白(#ffffff)を透過色のデフォルトとする
+    var targetHex = transHex || "#ffffff";
+    var rgb = hexToRgb(targetHex);
+
     if (rgb) {
       var w = copy.width;
       var h = copy.height;
       var px = copy.data;
-      var tol = 8;
+      var tol = 30; // 色差の許容誤差
 
       function isMatchTrans(idx4) {
         return (
@@ -1349,30 +1349,29 @@
         );
       }
 
-      // 選択した透明色と一致するピクセルを透過化
+      // 1. 透明色（または初期背景白）に類似するピクセルをアルファ0にクリア
       for (var i = 0; i < px.length; i += 4) {
         if (isMatchTrans(i)) {
           px[i + 3] = 0;
         }
       }
 
-      // 透明色（または白背景とつながった白領域）の外周アンチエイリアスも軽く透過処理
-      var isWhiteSelected = (rgb.r >= 248 && rgb.g >= 248 && rgb.b >= 248);
-      if (isWhiteSelected) {
-        for (var y = 0; y < h; y++) {
-          for (var x = 0; x < w; x++) {
-            var p = (y * w + x) * 4;
-            if (px[p + 3] === 0) continue;
-            var r = px[p], g = px[p + 1], b = px[p + 2];
-            if (r >= 235 && g >= 235 && b >= 235) {
-              var hasTransparentNeighbor = false;
-              if (x > 0 && px[p - 4 + 3] === 0) hasTransparentNeighbor = true;
-              else if (x < w - 1 && px[p + 4 + 3] === 0) hasTransparentNeighbor = true;
-              else if (y > 0 && px[p - w * 4 + 3] === 0) hasTransparentNeighbor = true;
-              else if (y < h - 1 && px[p + w * 4 + 3] === 0) hasTransparentNeighbor = true;
-              if (hasTransparentNeighbor) {
-                px[p + 3] = 0;
-              }
+      // 2. 透過された領域の境界線付近（輪郭の薄いフチ）も判定して自然に消去
+      for (var y = 0; y < h; y++) {
+        for (var x = 0; x < w; x++) {
+          var p = (y * w + x) * 4;
+          if (px[p + 3] === 0) continue;
+
+          var diff = Math.abs(px[p] - rgb.r) + Math.abs(px[p + 1] - rgb.g) + Math.abs(px[p + 2] - rgb.b);
+          if (diff < 90) {
+            var hasTransparentNeighbor = false;
+            if (x > 0 && px[p - 4 + 3] === 0) hasTransparentNeighbor = true;
+            else if (x < w - 1 && px[p + 4 + 3] === 0) hasTransparentNeighbor = true;
+            else if (y > 0 && px[p - w * 4 + 3] === 0) hasTransparentNeighbor = true;
+            else if (y < h - 1 && px[p + w * 4 + 3] === 0) hasTransparentNeighbor = true;
+
+            if (hasTransparentNeighbor) {
+              px[p + 3] = 0;
             }
           }
         }
@@ -1391,13 +1390,7 @@
     var sctx = strip.getContext("2d");
     sctx.clearRect(0, 0, strip.width, strip.height);
     for (var i = 0; i < n; i++) {
-      var fCan = transHex ? createTransparentFrameCanvas(framesArr[i], transHex) : (function() {
-        var tc = document.createElement("canvas");
-        tc.width = w;
-        tc.height = h;
-        tc.getContext("2d").putImageData(framesArr[i], 0, 0);
-        return tc;
-      })();
+      var fCan = createTransparentFrameCanvas(framesArr[i], transHex);
       sctx.drawImage(fCan, i * w, 0);
     }
     return strip;
@@ -1408,9 +1401,7 @@
     stEl.textContent = "共有スタンプ: " + registeredStamps.length + "/" + MAX_STAMPS + "個 ｜ 登録背景: " + bgAssets.length + "/" + MAX_BG_ASSETS + "個";
   }
 
-  /* ----------------------------
-     スマホ／PC判別＆縦画面チェック
-  ---------------------------- */
+  /* スマホ／PC判別＆縦画面チェック */
   function detectInitialDevice() {
     var touch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
     var small = Math.min(window.screen.width || window.innerWidth, window.screen.height || window.innerHeight) <= 820;
@@ -1445,9 +1436,7 @@
     }
   }
 
-  /* ----------------------------
-     画面遷移
-  ---------------------------- */
+  /* 画面遷移 */
   window.showScreen = function(id) {
     if (id === "screen-draw") {
       document.body.classList.add("drawing-mode");
@@ -1566,9 +1555,7 @@
     }
   };
 
-  /* ----------------------------
-     お絵描き・GUI（描画中は白キャンバスでグリッド視認性を確保）
-  ---------------------------- */
+  /* お絵描き・GUI */
   var pCanvas = document.getElementById("paint-canvas");
   var pCtx = pCanvas.getContext("2d");
   var gCanvas = document.getElementById("grid-overlay-canvas");
@@ -1762,9 +1749,7 @@
     state.frames[state.frameIdx] = nxt;
   };
 
-  /* ----------------------------
-     フィット＆ピンチズーム＆描画
-  ---------------------------- */
+  /* フィット＆ピンチズーム＆描画 */
   var cArea = document.getElementById("canvas-area");
   var fitScale = 1;
   var userScale = 1;
@@ -1940,9 +1925,7 @@
     pCtx.putImageData(img, 0, 0);
   }
 
-  /* ----------------------------
-     枚数管理・プレビュー・透過・背景連結＆登録・完了ボタン
-  ---------------------------- */
+  /* 枚数管理・プレビュー・透過・背景連結＆登録・完了ボタン */
   function refreshFrameLabel() {
     var maxF = getMaxFramesForMode();
     document.getElementById("frame-info").textContent = (state.frameIdx + 1) + "枚目 (全" + state.frames.length + "枚 / 最大" + maxF + "枚)";
@@ -1967,9 +1950,11 @@
   };
 
   window.savePNG = function() {
+    state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
+    var tCan = createTransparentFrameCanvas(state.frames[state.frameIdx], state.transparentColor);
     var a = document.createElement("a");
     a.download = "wing_frame_" + (state.frameIdx + 1) + ".png";
-    a.href = pCanvas.toDataURL("image/png");
+    a.href = tCan.toDataURL("image/png");
     a.click();
     document.getElementById("modal-saved-dialog").classList.add("open");
   };
@@ -2056,7 +2041,6 @@
     document.getElementById("modal-preview").classList.remove("open");
   };
 
-  /* プレビュー画面の「完了」ボタン押下時：スタンプ未保存なら警告ポップアップを表示 */
   window.onPreviewCompleteClicked = function() {
     if (state.gameMode === "anim" && !stampRegisteredInCurrentSession) {
       document.getElementById("modal-unsaved-warn").classList.add("open");
@@ -2293,7 +2277,7 @@
     alert("「" + stampObj.name + "」を共有スタンプに登録しました！（" + registeredStamps.length + "/" + MAX_STAMPS + "個）");
   };
 
-  /* 背景素材を最大3個まで登録（最大3枚連結の横長1枚絵として保持） */
+  /* 背景素材を最大3個まで登録 */
   window.registerBackgroundAsset = function() {
     state.frames[state.frameIdx] = pCtx.getImageData(0, 0, state.canvasW, state.canvasH);
     var stripCanvas = buildHorizontalStripCanvas(state.frames, state.canvasW, state.canvasH, null);
@@ -2462,9 +2446,7 @@
     }
   };
 
-  /* ----------------------------
-     （３）PV（合体）モード：①ポケカラ用（上段・中段・下段＋「なし」選択可）
-  ---------------------------- */
+  /* （３）PV（合体）モード：①ポケカラ用 */
   var pokeSlotsData = [null, null, null];
   var pokeScrollOn = true;
   var pokeAxis = "h";
@@ -2586,9 +2568,7 @@
     window.showScreen("screen-pv-timer-setup");
   };
 
-  /* ----------------------------
-     制限時間（1〜5分）・上中下段／コマ選択・スタンプ配置（透過反映）・MP4録画
-  ---------------------------- */
+  /* 制限時間（1〜5分）・上中下段／コマ選択・スタンプ配置（透過適用） */
   var pvCanvas = document.getElementById("pv-canvas");
   var pvCtx = pvCanvas.getContext("2d");
   var selectedStampIdx = 0;
@@ -2793,9 +2773,7 @@
   }, { passive: false });
   pvCanvas.addEventListener("touchend", onPvUp);
 
-  /* ----------------------------
-     ③ 動画合体（シーン別・長尺PV）
-  ---------------------------- */
+  /* ③ 動画合体（シーン別・長尺PV） */
   var sceneItems = [];
   var isJoiningBusy = false;
 
@@ -3037,9 +3015,7 @@
     playNextScene(0);
   };
 
-  /* ----------------------------
-     制限時間終了→合体プレビュー→追加／終了／MP4実録画
-  ---------------------------- */
+  /* 制限時間終了→合体プレビュー→追加／終了／MP4実録画 */
   var resultLoopTimer = null;
   var recordedVideoBlob = null;
   var recordedVideoExt = "mp4";
